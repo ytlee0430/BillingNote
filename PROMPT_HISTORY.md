@@ -20,3 +20,13 @@ This file records all prompts from Claude Code sessions.
 ```
 幫我把之前的prompt都記錄下來並放到一個檔案中推上git, 之後的每個prompt都幫我記錄在同一份檔案中
 ```
+
+### Prompt 4
+```
+開始實作phase 2 之前幫我檢查一下我需要提供什麼資訊，如果有放在什麼路徑
+```
+
+### Prompt 5
+```
+我在backend/testdata/pdfs/下放了pdf檔。 在backend/testdata/file_name_map.json有pdf file name 的rex 跟password。讀一下如果沒問題就可以開始實作phase 2A 了
+```

@@ -40,3 +40,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Test data with sensitive info (PDF passwords)
+testdata/

@@ -10,10 +10,15 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	Upload   UploadConfig
+	Server     ServerConfig
+	Database   DatabaseConfig
+	JWT        JWTConfig
+	Upload     UploadConfig
+	Encryption EncryptionConfig
+}
+
+type EncryptionConfig struct {
+	Key string
 }
 
 type ServerConfig struct {
@@ -66,6 +71,9 @@ func Load() (*Config, error) {
 		Upload: UploadConfig{
 			Dir:     getEnv("UPLOAD_DIR", "./uploads"),
 			MaxSize: parseInt64(getEnv("MAX_UPLOAD_SIZE", "10485760")), // 10MB
+		},
+		Encryption: EncryptionConfig{
+			Key: getEnv("ENCRYPTION_KEY", "change-this-encryption-key-32b"),
 		},
 	}
 

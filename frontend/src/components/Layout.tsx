@@ -15,6 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { path: '/dashboard', label: '儀表板', icon: '📊' },
     { path: '/transactions', label: '交易記錄', icon: '💳' },
+    { path: '/upload', label: '上傳帳單', icon: '📄' },
     { path: '/charts', label: '圖表', icon: '📈' },
     { path: '/settings', label: '設定', icon: '⚙️' },
   ]

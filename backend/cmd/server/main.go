@@ -35,10 +35,21 @@ func main() {
 	authService := services.NewAuthService(userRepo, cfg.JWT.Secret, cfg.JWT.Expiry)
 	transactionService := services.NewTransactionService(transactionRepo)
 
+	// Initialize PDF password service
+	pdfPasswordService, err := services.NewPDFPasswordService(database.GetDB(), cfg.Encryption.Key)
+	if err != nil {
+		log.Fatalf("Failed to initialize PDF password service: %v", err)
+	}
+
+	// Initialize upload service
+	uploadService := services.NewUploadService(database.GetDB(), pdfPasswordService, cfg.Upload.Dir)
+
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
+	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
+	uploadHandler := handlers.NewUploadHandler(uploadService)
 
 	// Setup Gin
 	if cfg.Server.Mode == "release" {
@@ -82,6 +93,16 @@ func main() {
 		// Stats
 		api.GET("/stats/monthly", transactionHandler.GetMonthlyStats)
 		api.GET("/stats/category", transactionHandler.GetCategoryStats)
+
+		// PDF Upload
+		api.POST("/upload/pdf", uploadHandler.UploadAndParse)
+		api.POST("/transactions/import", uploadHandler.Import)
+
+		// PDF Password Settings
+		api.GET("/settings/pdf-passwords", pdfPasswordHandler.List)
+		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
+		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
+		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
 	}
 
 	// Start server

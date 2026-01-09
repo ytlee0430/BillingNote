@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Transactions } from './pages/Transactions'
 import { Charts } from './pages/Charts'
 import { Settings } from './pages/Settings'
+import Upload from './pages/Upload'
 import { Layout } from './components/Layout'
 
 const queryClient = new QueryClient({
@@ -59,6 +60,7 @@ function App() {
                   <Routes>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/transactions" element={<Transactions />} />
+                    <Route path="/upload" element={<Upload />} />
                     <Route path="/charts" element={<Charts />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/" element={<Navigate to="/dashboard" />} />
