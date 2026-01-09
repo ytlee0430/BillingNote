@@ -327,6 +327,34 @@ npx playwright show-report             # 查看報告
 
 ---
 
+### 自動測試與推送
+
+**測試成功自動 Commit + Push：**
+
+當所有測試通過時，自動提交並推送程式碼到 GitHub。
+
+**使用方式：**
+```bash
+# 從專案根目錄執行
+./test-and-push.sh                           # 使用預設 commit message
+./test-and-push.sh "feat: add new feature"   # 自訂 commit message
+
+# 或透過 Makefile (在 backend/ 目錄)
+make test-push
+make test-push MSG="fix: resolve bug"
+
+# 或透過 npm (在 frontend/ 目錄)
+npm run test:push
+```
+
+**流程：**
+1. 執行後端 Go 測試 (`go test ./... -v`)
+2. 執行前端 Vitest 測試 (`npm test -- --run`)
+3. 若全部通過 → 自動 `git add -A && git commit && git push`
+4. 若任一失敗 → 中止，不會提交
+
+---
+
 ### 測試專案結構
 
 #### 後端測試結構

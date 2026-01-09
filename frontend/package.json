@@ -13,7 +13,8 @@
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test:push": "cd .. && ./test-and-push.sh"
   },
   "dependencies": {
     "react": "^18.2.0",

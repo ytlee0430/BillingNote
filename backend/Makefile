@@ -1,4 +1,4 @@
-.PHONY: help run build test test-coverage clean migrate-up migrate-down
+.PHONY: help run build test test-coverage clean migrate-up migrate-down test-push
 
 help:
 	@echo "Available commands:"
@@ -9,6 +9,7 @@ help:
 	@echo "  make clean          - Clean build artifacts"
 	@echo "  make deps           - Install dependencies"
 	@echo "  make migrate-up     - Run database migrations"
+	@echo "  make test-push      - Run all tests, auto commit & push on success"
 
 run:
 	go run cmd/server/main.go
@@ -34,3 +35,7 @@ deps:
 
 migrate-up:
 	psql -h localhost -U postgres -d billing_note -f migrations/001_init.sql
+
+test-push:
+	@echo "Running all tests and auto-pushing on success..."
+	cd .. && ./test-and-push.sh "$(MSG)"
