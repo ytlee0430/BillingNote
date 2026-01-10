@@ -1,12 +1,11 @@
 package pdf
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -123,12 +122,6 @@ func (r *ParserRegistry) ExtractText(pdfPath string, passwords []string) (string
 
 // extractTextFromPDF extracts text from a PDF file
 func extractTextFromPDF(pdfPath string, password string) (string, error) {
-	f, err := os.Open(pdfPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to open PDF: %w", err)
-	}
-	defer f.Close()
-
 	// Create configuration with password if provided
 	conf := model.NewDefaultConfiguration()
 	if password != "" {
@@ -136,19 +129,38 @@ func extractTextFromPDF(pdfPath string, password string) (string, error) {
 		conf.OwnerPW = password
 	}
 
-	// Read PDF into buffer
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, f); err != nil {
-		return "", fmt.Errorf("failed to read PDF: %w", err)
+	// Create a temporary directory for extracted content
+	tmpDir, err := os.MkdirTemp("", "pdf-extract-")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp dir: %w", err)
 	}
+	defer os.RemoveAll(tmpDir)
 
-	// Extract text from all pages
-	var textBuf bytes.Buffer
-	if err := api.ExtractContent(bytes.NewReader(buf.Bytes()), &textBuf, nil, conf); err != nil {
+	// Extract content to temp directory
+	// Using ExtractContentFile which writes to files
+	if err := api.ExtractContentFile(pdfPath, tmpDir, nil, conf); err != nil {
 		return "", fmt.Errorf("failed to extract text: %w", err)
 	}
 
-	return textBuf.String(), nil
+	// Read all extracted text files
+	var textContent strings.Builder
+	files, err := os.ReadDir(tmpDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to read temp dir: %w", err)
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			content, err := os.ReadFile(filepath.Join(tmpDir, file.Name()))
+			if err != nil {
+				continue
+			}
+			textContent.Write(content)
+			textContent.WriteString("\n")
+		}
+	}
+
+	return textContent.String(), nil
 }
 
 // Parse parses a PDF file and returns transactions

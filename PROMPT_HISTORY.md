@@ -30,3 +30,8 @@ This file records all prompts from Claude Code sessions.
 ```
 我在backend/testdata/pdfs/下放了pdf檔。 在backend/testdata/file_name_map.json有pdf file name 的rex 跟password。讀一下如果沒問題就可以開始實作phase 2A 了
 ```
+
+### Prompt 6
+```
+用 Docker 跑一下測試看看
+```
