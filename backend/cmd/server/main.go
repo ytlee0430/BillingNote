@@ -7,57 +7,78 @@ import (
 	"billing-note/internal/services"
 	"billing-note/pkg/config"
 	"billing-note/pkg/database"
+	"billing-note/pkg/logger"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Initialize logger
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	jsonLogs := os.Getenv("LOG_FORMAT") == "json"
+	logger.Init(logLevel, jsonLogs)
+
+	logger.Info("Starting Billing Note Server...")
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		logger.WithError(err).Fatal("Failed to load configuration")
 	}
+	logger.Info("Configuration loaded successfully")
 
 	// Connect to database
 	if err := database.Connect(&cfg.Database); err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		logger.WithError(err).Fatal("Failed to connect to database")
 	}
 	defer database.Close()
+	logger.Info("Database connected successfully")
 
 	// Initialize repositories
+	logger.Debug("Initializing repositories...")
 	userRepo := repository.NewUserRepository(database.GetDB())
 	categoryRepo := repository.NewCategoryRepository(database.GetDB())
 	transactionRepo := repository.NewTransactionRepository(database.GetDB())
+	logger.Debug("Repositories initialized")
 
 	// Initialize services
+	logger.Debug("Initializing services...")
 	authService := services.NewAuthService(userRepo, cfg.JWT.Secret, cfg.JWT.Expiry)
 	transactionService := services.NewTransactionService(transactionRepo)
 
 	// Initialize PDF password service
 	pdfPasswordService, err := services.NewPDFPasswordService(database.GetDB(), cfg.Encryption.Key)
 	if err != nil {
-		log.Fatalf("Failed to initialize PDF password service: %v", err)
+		logger.WithError(err).Fatal("Failed to initialize PDF password service")
 	}
 
 	// Initialize upload service
 	uploadService := services.NewUploadService(database.GetDB(), pdfPasswordService, cfg.Upload.Dir)
+	logger.Debug("Services initialized")
 
 	// Initialize handlers
+	logger.Debug("Initializing handlers...")
 	authHandler := handlers.NewAuthHandler(authService)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	logger.Debug("Handlers initialized")
 
 	// Setup Gin
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	r := gin.Default()
+	r := gin.New() // Use gin.New() instead of gin.Default() to have full control over middleware
 
-	// Middleware
+	// Middleware - Add logging middleware first
+	r.Use(gin.Recovery()) // Panic recovery
+	r.Use(middleware.LoggingMiddleware()) // Custom logging
 	r.Use(middleware.CORSMiddleware(cfg.Server.AllowOrigins))
 
 	// Health check
@@ -107,8 +128,12 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
-	log.Printf("Server starting on %s", addr)
+	logger.WithFields(logger.Fields{
+		"port": cfg.Server.Port,
+		"mode": cfg.Server.Mode,
+	}).Info("Server starting")
+
 	if err := r.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logger.WithError(err).Fatal("Failed to start server")
 	}
 }

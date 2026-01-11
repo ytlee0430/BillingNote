@@ -35,3 +35,13 @@ This file records all prompts from Claude Code sessions.
 ```
 用 Docker 跑一下測試看看
 ```
+
+### Prompt 7
+```
+上傳PDF有問題不能上傳，功能都要經過playwright的驗證才能算完成
+```
+
+### Prompt 8
+```
+目前專案沒有log，幫我在每個api跟每個function加入log 還有error msg也enrich一下 目前根本不知道問題是什麼
+```
