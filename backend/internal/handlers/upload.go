@@ -4,6 +4,8 @@ import (
 	"billing-note/internal/middleware"
 	"billing-note/internal/services"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,8 +45,14 @@ func (h *UploadHandler) UploadAndParse(c *gin.Context) {
 	results := make([]services.UploadResult, 0, len(files))
 
 	for _, file := range files {
-		// Check file type
-		if file.Header.Get("Content-Type") != "application/pdf" {
+		// Check file type by extension and content type
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		contentType := file.Header.Get("Content-Type")
+		isPDF := ext == ".pdf" ||
+			contentType == "application/pdf" ||
+			strings.Contains(contentType, "pdf")
+
+		if !isPDF {
 			results = append(results, services.UploadResult{
 				Filename: file.Filename,
 				Error:    "not a PDF file",

@@ -22,7 +22,7 @@ export default function Upload() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     const droppedFiles = Array.from(e.dataTransfer.files).filter(
-      file => file.type === 'application/pdf'
+      file => file.type === 'application/pdf' || file.name.endsWith('.pdf')
     )
     setFiles(prev => [...prev, ...droppedFiles])
   }, [])
@@ -30,7 +30,7 @@ export default function Upload() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files).filter(
-        file => file.type === 'application/pdf'
+        file => file.type === 'application/pdf' || file.name.endsWith('.pdf')
       )
       setFiles(prev => [...prev, ...selectedFiles])
     }
