@@ -59,6 +59,26 @@ func main() {
 
 	// Initialize upload service
 	uploadService := services.NewUploadService(database.GetDB(), pdfPasswordService, cfg.Upload.Dir)
+
+	// Initialize Gmail service
+	gmailRepo := repository.NewGmailRepository(database.GetDB())
+	var gmailService *services.GmailService
+	if cfg.Google.ClientID != "" && cfg.Google.ClientSecret != "" {
+		gmailService, err = services.NewGmailService(
+			gmailRepo,
+			cfg.Encryption.Key,
+			cfg.Google.ClientID,
+			cfg.Google.ClientSecret,
+			cfg.Google.RedirectURI,
+			cfg.JWT.Secret,
+		)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to initialize Gmail service")
+		}
+		logger.Info("Gmail service initialized")
+	} else {
+		logger.Warn("Gmail service disabled: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set")
+	}
 	logger.Debug("Services initialized")
 
 	// Initialize handlers
@@ -68,6 +88,10 @@ func main() {
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	var gmailHandler *handlers.GmailHandler
+	if gmailService != nil {
+		gmailHandler = handlers.NewGmailHandler(gmailService)
+	}
 	logger.Debug("Handlers initialized")
 
 	// Setup Gin
@@ -124,6 +148,15 @@ func main() {
 		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
 		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
 		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
+
+		// Gmail Integration
+		if gmailHandler != nil {
+			api.GET("/gmail/auth", gmailHandler.GetAuthURL)
+			api.POST("/gmail/callback", gmailHandler.HandleCallback)
+			api.GET("/gmail/status", gmailHandler.GetStatus)
+			api.PUT("/gmail/settings", gmailHandler.UpdateSettings)
+			api.DELETE("/gmail/disconnect", gmailHandler.Disconnect)
+		}
 	}
 
 	// Start server

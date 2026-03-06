@@ -1,0 +1,105 @@
+sprint:
+  name: "Sprint 1 - Full Implementation"
+  start_date: "2026-03-06"
+  end_date: "2026-03-20"
+  length_days: 14
+
+stories:
+  - id: "1.1"
+    title: "Gmail OAuth Backend Service"
+    epic: "Gmail Auto-Scan"
+    priority: high
+    points: 5
+    status: completed
+
+  - id: "1.2"
+    title: "Gmail Email Scanning Service"
+    epic: "Gmail Auto-Scan"
+    priority: high
+    points: 5
+    status: pending
+
+  - id: "1.3"
+    title: "Gmail Settings Frontend"
+    epic: "Gmail Auto-Scan"
+    priority: medium
+    points: 3
+    status: pending
+
+  - id: "2.1"
+    title: "Invoice Sync Backend Service"
+    epic: "Cloud Invoice"
+    priority: high
+    points: 5
+    status: pending
+
+  - id: "2.2"
+    title: "Deduplication Engine"
+    epic: "Cloud Invoice"
+    priority: high
+    points: 8
+    status: pending
+
+  - id: "2.3"
+    title: "Invoice Frontend UI"
+    epic: "Cloud Invoice"
+    priority: medium
+    points: 5
+    status: pending
+
+  - id: "3.1"
+    title: "Advanced Charts"
+    epic: "Advanced Features"
+    priority: medium
+    points: 3
+    status: pending
+
+  - id: "3.2"
+    title: "Budget Management"
+    epic: "Advanced Features"
+    priority: medium
+    points: 5
+    status: pending
+
+  - id: "3.3"
+    title: "Data Export"
+    epic: "Advanced Features"
+    priority: medium
+    points: 3
+    status: pending
+
+  - id: "3.4"
+    title: "Advanced Search and Tags"
+    epic: "Advanced Features"
+    priority: low
+    points: 5
+    status: pending
+
+  - id: "4.1"
+    title: "Pairing Code System"
+    epic: "Multi-User Sharing"
+    priority: low
+    points: 3
+    status: pending
+
+  - id: "4.2"
+    title: "Permission Middleware and View-As"
+    epic: "Multi-User Sharing"
+    priority: low
+    points: 5
+    status: pending
+
+  - id: "4.3"
+    title: "Sharing Frontend UI"
+    epic: "Multi-User Sharing"
+    priority: low
+    points: 3
+    status: pending
+
+summary:
+  total_stories: 13
+  total_points: 58
+  completed: 1
+  in_progress: 0
+  blocked: 0
+  pending: 12
