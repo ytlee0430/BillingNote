@@ -17,7 +17,7 @@ stories:
     epic: "Gmail Auto-Scan"
     priority: high
     points: 5
-    status: pending
+    status: completed
 
   - id: "1.3"
     title: "Gmail Settings Frontend"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 1
+  completed: 2
   in_progress: 0
   blocked: 0
-  pending: 12
+  pending: 11

@@ -13,12 +13,16 @@ import (
 
 // GmailHandler handles Gmail integration endpoints
 type GmailHandler struct {
-	gmailService *services.GmailService
+	gmailService    *services.GmailService
+	gmailScanService *services.GmailScanService
 }
 
 // NewGmailHandler creates a new Gmail handler
-func NewGmailHandler(gmailService *services.GmailService) *GmailHandler {
-	return &GmailHandler{gmailService: gmailService}
+func NewGmailHandler(gmailService *services.GmailService, scanService *services.GmailScanService) *GmailHandler {
+	return &GmailHandler{
+		gmailService:    gmailService,
+		gmailScanService: scanService,
+	}
 }
 
 // GetAuthURL returns the Google OAuth authorization URL
@@ -185,4 +189,36 @@ func (h *GmailHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Gmail settings updated"})
+}
+
+// TriggerScan triggers a Gmail scan
+// POST /api/gmail/scan
+func (h *GmailHandler) TriggerScan(c *gin.Context) {
+	log := logger.APILog("GmailHandler", "TriggerScan")
+	requestID := c.GetString("request_id")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		appErr := errors.NewUnauthorizedError("User not authenticated")
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	result, err := h.gmailScanService.TriggerScan(userID)
+	if err != nil {
+		log.WithFields(logger.Fields{
+			"request_id": requestID,
+			"user_id":    userID,
+			"error":      err.Error(),
+		}).Error("Failed to trigger Gmail scan")
+		if appErr := errors.GetAppError(err); appErr != nil {
+			c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		} else {
+			appErr := errors.NewInternalError("Failed to scan Gmail", err)
+			c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

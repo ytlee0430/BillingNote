@@ -90,7 +90,8 @@ func main() {
 	uploadHandler := handlers.NewUploadHandler(uploadService)
 	var gmailHandler *handlers.GmailHandler
 	if gmailService != nil {
-		gmailHandler = handlers.NewGmailHandler(gmailService)
+		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
+		gmailHandler = handlers.NewGmailHandler(gmailService, gmailScanService)
 	}
 	logger.Debug("Handlers initialized")
 
@@ -153,6 +154,7 @@ func main() {
 		if gmailHandler != nil {
 			api.GET("/gmail/auth", gmailHandler.GetAuthURL)
 			api.POST("/gmail/callback", gmailHandler.HandleCallback)
+			api.POST("/gmail/scan", gmailHandler.TriggerScan)
 			api.GET("/gmail/status", gmailHandler.GetStatus)
 			api.PUT("/gmail/settings", gmailHandler.UpdateSettings)
 			api.DELETE("/gmail/disconnect", gmailHandler.Disconnect)

@@ -87,7 +87,8 @@ func setupGmailTestRouter() (*gin.Engine, *mockGmailRepoHandler) {
 		"http://localhost/callback",
 		handlerTestJWTSecret,
 	)
-	handler := NewGmailHandler(svc)
+	scanSvc := services.NewGmailScanService(svc, nil, repo, "/tmp/test-uploads")
+	handler := NewGmailHandler(svc, scanSvc)
 
 	r := gin.New()
 	api := r.Group("/api")
