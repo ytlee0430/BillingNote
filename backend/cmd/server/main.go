@@ -88,6 +88,12 @@ func main() {
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	// Initialize Invoice service
+	invoiceRepo := repository.NewInvoiceRepository(database.GetDB())
+	invoiceService := services.NewInvoiceService(invoiceRepo, cfg.EInvoice.APIURL, cfg.EInvoice.AppID)
+	logger.Info("Invoice service initialized")
+
+	invoiceHandler := handlers.NewInvoiceHandler(invoiceService, database.GetDB())
 	var gmailHandler *handlers.GmailHandler
 	if gmailService != nil {
 		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
@@ -149,6 +155,13 @@ func main() {
 		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
 		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
 		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
+
+		// Invoice
+		api.POST("/invoice/sync", invoiceHandler.Sync)
+		api.GET("/invoice/list", invoiceHandler.List)
+		api.POST("/invoice/confirm-duplicate", invoiceHandler.ConfirmDuplicate)
+		api.DELETE("/invoice/:id", invoiceHandler.Delete)
+		api.PUT("/invoice/settings", invoiceHandler.UpdateSettings)
 
 		// Gmail Integration
 		if gmailHandler != nil {

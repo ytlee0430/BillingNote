@@ -16,12 +16,18 @@ type Config struct {
 	Upload     UploadConfig
 	Encryption EncryptionConfig
 	Google     GoogleConfig
+	EInvoice   EInvoiceConfig
 }
 
 type GoogleConfig struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURI  string
+}
+
+type EInvoiceConfig struct {
+	AppID  string
+	APIURL string
 }
 
 type EncryptionConfig struct {
@@ -86,6 +92,10 @@ func Load() (*Config, error) {
 			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 			RedirectURI:  getEnv("GOOGLE_REDIRECT_URI", "http://localhost:5173/settings/gmail/callback"),
+		},
+		EInvoice: EInvoiceConfig{
+			AppID:  getEnv("EINVOICE_APP_ID", ""),
+			APIURL: getEnv("EINVOICE_API_URL", "https://api.einvoice.nat.gov.tw/PB2CAPIVAN/invapp/InvApp"),
 		},
 	}
 

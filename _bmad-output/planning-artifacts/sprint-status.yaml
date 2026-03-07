@@ -31,7 +31,7 @@ stories:
     epic: "Cloud Invoice"
     priority: high
     points: 5
-    status: pending
+    status: completed
 
   - id: "2.2"
     title: "Deduplication Engine"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 2
+  completed: 3
   in_progress: 0
   blocked: 0
-  pending: 11
+  pending: 10
