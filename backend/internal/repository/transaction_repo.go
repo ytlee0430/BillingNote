@@ -18,6 +18,13 @@ type TransactionFilter struct {
 	PageSize  int
 }
 
+// TrendDataPoint represents a single month's income/expense data
+type TrendDataPoint struct {
+	Date    string  `json:"date"`
+	Income  float64 `json:"income"`
+	Expense float64 `json:"expense"`
+}
+
 type TransactionRepository interface {
 	Create(transaction *models.Transaction) error
 	GetByID(id uint) (*models.Transaction, error)
@@ -26,6 +33,7 @@ type TransactionRepository interface {
 	Delete(id uint) error
 	GetMonthlyStats(userID uint, year int, month int) (map[string]float64, error)
 	GetCategoryStats(userID uint, startDate, endDate time.Time, transactionType string) ([]map[string]interface{}, error)
+	GetTrendStats(userID uint, months int) ([]TrendDataPoint, error)
 }
 
 type transactionRepository struct {
@@ -161,4 +169,58 @@ func (r *transactionRepository) GetCategoryStats(userID uint, startDate, endDate
 	}
 
 	return stats, nil
+}
+
+func (r *transactionRepository) GetTrendStats(userID uint, months int) ([]TrendDataPoint, error) {
+	now := time.Now()
+	startDate := time.Date(now.Year(), now.Month()-time.Month(months-1), 1, 0, 0, 0, 0, time.UTC)
+
+	var results []struct {
+		YearMonth string
+		Type      string
+		Total     float64
+	}
+
+	err := r.db.Model(&models.Transaction{}).
+		Select("TO_CHAR(transaction_date, 'YYYY-MM') as year_month, type, COALESCE(SUM(amount), 0) as total").
+		Where("user_id = ? AND transaction_date >= ?", userID, startDate).
+		Group("year_month, type").
+		Order("year_month ASC").
+		Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Build map for quick lookup
+	dataMap := make(map[string]*TrendDataPoint)
+	for i := 0; i < months; i++ {
+		d := time.Date(now.Year(), now.Month()-time.Month(months-1-i), 1, 0, 0, 0, 0, time.UTC)
+		key := d.Format("2006-01")
+		dataMap[key] = &TrendDataPoint{Date: key}
+	}
+
+	for _, r := range results {
+		dp, ok := dataMap[r.YearMonth]
+		if !ok {
+			dp = &TrendDataPoint{Date: r.YearMonth}
+			dataMap[r.YearMonth] = dp
+		}
+		if r.Type == "income" {
+			dp.Income = r.Total
+		} else {
+			dp.Expense = r.Total
+		}
+	}
+
+	// Convert to sorted slice
+	trend := make([]TrendDataPoint, 0, months)
+	for i := 0; i < months; i++ {
+		d := time.Date(now.Year(), now.Month()-time.Month(months-1-i), 1, 0, 0, 0, 0, time.UTC)
+		key := d.Format("2006-01")
+		if dp, ok := dataMap[key]; ok {
+			trend = append(trend, *dp)
+		}
+	}
+
+	return trend, nil
 }

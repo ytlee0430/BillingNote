@@ -6,7 +6,7 @@ import {
   TransactionFilter,
   TransactionListResponse,
 } from '@/types/transaction'
-import { MonthlyStats, CategoryStats } from '@/types/api'
+import { MonthlyStats, CategoryStats, TrendStatsResponse } from '@/types/api'
 
 export const transactionsApi = {
   list: async (filter: TransactionFilter = {}) => {
@@ -46,6 +46,11 @@ export const transactionsApi = {
     const params: any = { start_date: startDate, end_date: endDate }
     if (type) params.type = type
     const response = await apiClient.get<CategoryStats[]>('/api/stats/category', params)
+    return response.data
+  },
+
+  getTrendStats: async (months: number = 12) => {
+    const response = await apiClient.get<TrendStatsResponse>('/api/stats/trend', { months })
     return response.data
   },
 }

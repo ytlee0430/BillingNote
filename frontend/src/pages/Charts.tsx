@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { PieChart } from '@/components/charts/PieChart'
 import { BarChart } from '@/components/charts/BarChart'
-import { useMonthlyStats, useCategoryStats } from '@/hooks/useTransactions'
+import { LineChart } from '@/components/charts/LineChart'
+import { useMonthlyStats, useCategoryStats, useTrendStats } from '@/hooks/useTransactions'
 
 export const Charts = () => {
   const currentDate = new Date()
@@ -25,6 +26,9 @@ export const Charts = () => {
 
   const { data: categoryStats, isLoading: isCategoryLoading } =
     useCategoryStats(startDate, endDate, statsType)
+
+  // Get 12-month trend data
+  const { data: trendStats, isLoading: isTrendLoading } = useTrendStats(12)
 
   const years = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i)
   const months = [
@@ -125,6 +129,21 @@ export const Charts = () => {
           </div>
         </div>
       ) : null}
+
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">12-Month Trend</h2>
+        {isTrendLoading ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading trend data...
+          </div>
+        ) : trendStats?.data && trendStats.data.length > 0 ? (
+          <LineChart data={trendStats.data} />
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No trend data available
+          </div>
+        )}
+      </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex justify-between items-center mb-4">

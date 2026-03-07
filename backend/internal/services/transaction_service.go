@@ -15,6 +15,7 @@ type TransactionService interface {
 	DeleteTransaction(id uint, userID uint) error
 	GetMonthlyStats(userID uint, year int, month int) (map[string]float64, error)
 	GetCategoryStats(userID uint, startDate, endDate time.Time, transactionType string) ([]map[string]interface{}, error)
+	GetTrendStats(userID uint, months int) ([]repository.TrendDataPoint, error)
 }
 
 type CreateTransactionRequest struct {
@@ -147,4 +148,14 @@ func (s *transactionService) GetMonthlyStats(userID uint, year int, month int) (
 
 func (s *transactionService) GetCategoryStats(userID uint, startDate, endDate time.Time, transactionType string) ([]map[string]interface{}, error) {
 	return s.repo.GetCategoryStats(userID, startDate, endDate, transactionType)
+}
+
+func (s *transactionService) GetTrendStats(userID uint, months int) ([]repository.TrendDataPoint, error) {
+	if months <= 0 {
+		months = 12
+	}
+	if months > 24 {
+		months = 24
+	}
+	return s.repo.GetTrendStats(userID, months)
 }

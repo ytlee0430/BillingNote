@@ -54,6 +54,11 @@ func (m *mockTransactionRepo) GetCategoryStats(userID uint, startDate, endDate t
 	return args.Get(0).([]map[string]interface{}), args.Error(1)
 }
 
+func (m *mockTransactionRepo) GetTrendStats(userID uint, months int) ([]repository.TrendDataPoint, error) {
+	args := m.Called(userID, months)
+	return args.Get(0).([]repository.TrendDataPoint), args.Error(1)
+}
+
 // --- Helper ---
 
 func newTestDeduplicationService(txnRepo *mockTransactionRepo, invRepo *mockInvoiceRepo) *DeduplicationService {

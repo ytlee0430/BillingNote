@@ -68,6 +68,13 @@ export const useMonthlyStats = (year?: number, month?: number) => {
   })
 }
 
+export const useTrendStats = (months: number = 12) => {
+  return useQuery({
+    queryKey: ['trend-stats', months],
+    queryFn: () => transactionsApi.getTrendStats(months),
+  })
+}
+
 export const useCategoryStats = (
   startDate: string,
   endDate: string,

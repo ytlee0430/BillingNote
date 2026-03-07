@@ -476,3 +476,26 @@ func (h *TransactionHandler) GetCategoryStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+func (h *TransactionHandler) GetTrendStats(c *gin.Context) {
+	requestID := c.GetString("request_id")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		appErr := errors.NewUnauthorizedError("User not authenticated")
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	monthsStr := c.DefaultQuery("months", "12")
+	months, _ := strconv.Atoi(monthsStr)
+
+	trend, err := h.transactionService.GetTrendStats(userID, months)
+	if err != nil {
+		appErr := errors.NewInternalError("Failed to retrieve trend stats", err)
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": trend})
+}

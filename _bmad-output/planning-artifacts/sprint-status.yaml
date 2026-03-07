@@ -52,7 +52,7 @@ stories:
     epic: "Advanced Features"
     priority: medium
     points: 3
-    status: pending
+    status: completed
 
   - id: "3.2"
     title: "Budget Management"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 6
+  completed: 7
   in_progress: 0
   blocked: 0
-  pending: 7
+  pending: 6

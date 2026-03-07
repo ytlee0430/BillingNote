@@ -145,6 +145,7 @@ func main() {
 		// Stats
 		api.GET("/stats/monthly", transactionHandler.GetMonthlyStats)
 		api.GET("/stats/category", transactionHandler.GetCategoryStats)
+		api.GET("/stats/trend", transactionHandler.GetTrendStats)
 
 		// PDF Upload
 		api.POST("/upload/pdf", uploadHandler.UploadAndParse)
