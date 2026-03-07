@@ -94,6 +94,13 @@ func main() {
 	logger.Info("Invoice service initialized")
 
 	invoiceHandler := handlers.NewInvoiceHandler(invoiceService, database.GetDB())
+
+	// Initialize Budget service
+	budgetRepo := repository.NewBudgetRepository(database.GetDB())
+	budgetService := services.NewBudgetService(budgetRepo, transactionRepo)
+	budgetHandler := handlers.NewBudgetHandler(budgetService)
+	logger.Info("Budget service initialized")
+
 	var gmailHandler *handlers.GmailHandler
 	if gmailService != nil {
 		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
@@ -156,6 +163,13 @@ func main() {
 		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
 		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
 		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
+
+		// Budget
+		api.POST("/budget", budgetHandler.Create)
+		api.GET("/budget", budgetHandler.List)
+		api.PUT("/budget/:id", budgetHandler.Update)
+		api.DELETE("/budget/:id", budgetHandler.Delete)
+		api.GET("/budget/compare", budgetHandler.Compare)
 
 		// Invoice
 		api.POST("/invoice/sync", invoiceHandler.Sync)

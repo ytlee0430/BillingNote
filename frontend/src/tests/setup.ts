@@ -3,7 +3,7 @@ import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
 // Polyfill ResizeObserver for Recharts tests
-global.ResizeObserver = class ResizeObserver {
+;(globalThis as any).ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}

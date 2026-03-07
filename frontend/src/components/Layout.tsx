@@ -17,6 +17,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/transactions', label: '交易記錄', icon: '💳' },
     { path: '/upload', label: '上傳帳單', icon: '📄' },
     { path: '/invoices', label: '雲端發票', icon: '🧾' },
+    { path: '/budget', label: '預算', icon: '💰' },
     { path: '/charts', label: '圖表', icon: '📈' },
     { path: '/settings', label: '設定', icon: '⚙️' },
   ]

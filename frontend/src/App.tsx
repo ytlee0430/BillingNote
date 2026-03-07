@@ -10,6 +10,7 @@ import { Charts } from './pages/Charts'
 import { Settings } from './pages/Settings'
 import Upload from './pages/Upload'
 import { Invoices } from './pages/Invoices'
+import { Budget } from './pages/Budget'
 import { Layout } from './components/Layout'
 
 const queryClient = new QueryClient({
@@ -63,6 +64,7 @@ function App() {
                     <Route path="/transactions" element={<Transactions />} />
                     <Route path="/upload" element={<Upload />} />
                     <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/budget" element={<Budget />} />
                     <Route path="/charts" element={<Charts />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/" element={<Navigate to="/dashboard" />} />
