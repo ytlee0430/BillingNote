@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/common/Button'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   getPDFPasswords,
   setMultiplePDFPasswords,
@@ -9,10 +9,14 @@ import {
   PDFPasswordInput,
 } from '@/api/upload'
 import { invoicesApi } from '@/api/invoices'
+import { GmailConnect } from '@/components/gmail/GmailConnect'
+import { gmailApi } from '@/api/gmail'
 
 export const Settings = () => {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [gmailCallbackMessage, setGmailCallbackMessage] = useState<string | null>(null)
   const [passwords, setPasswords] = useState<PDFPassword[]>([])
   const [passwordInputs, setPasswordInputs] = useState<string[]>(['', '', '', ''])
   const [passwordLabels, setPasswordLabels] = useState<string[]>(['', '', '', ''])
@@ -25,6 +29,19 @@ export const Settings = () => {
   useEffect(() => {
     loadPasswords()
   }, [])
+
+  // Handle Gmail OAuth callback
+  useEffect(() => {
+    const code = searchParams.get('code')
+    const state = searchParams.get('state')
+    if (code && state) {
+      setSearchParams({}) // Clear URL params
+      gmailApi
+        .handleCallback({ code, state })
+        .then(() => setGmailCallbackMessage('Gmail connected successfully!'))
+        .catch(() => setGmailCallbackMessage('Failed to connect Gmail. Please try again.'))
+    }
+  }, [searchParams, setSearchParams])
 
   const loadPasswords = async () => {
     try {
@@ -169,6 +186,20 @@ export const Settings = () => {
             </div>
           </div>
         </div>
+
+        {gmailCallbackMessage && (
+          <div
+            className={`p-4 rounded-lg mb-6 ${
+              gmailCallbackMessage.includes('success')
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+            }`}
+          >
+            {gmailCallbackMessage}
+          </div>
+        )}
+
+        <GmailConnect />
 
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Invoice Settings</h2>
