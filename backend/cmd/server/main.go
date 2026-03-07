@@ -101,6 +101,10 @@ func main() {
 	budgetHandler := handlers.NewBudgetHandler(budgetService)
 	logger.Info("Budget service initialized")
 
+	// Initialize Export service
+	exportService := services.NewExportService(transactionRepo)
+	exportHandler := handlers.NewExportHandler(exportService)
+
 	var gmailHandler *handlers.GmailHandler
 	if gmailService != nil {
 		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
@@ -170,6 +174,9 @@ func main() {
 		api.PUT("/budget/:id", budgetHandler.Update)
 		api.DELETE("/budget/:id", budgetHandler.Delete)
 		api.GET("/budget/compare", budgetHandler.Compare)
+
+		// Export
+		api.GET("/export/csv", exportHandler.ExportCSV)
 
 		// Invoice
 		api.POST("/invoice/sync", invoiceHandler.Sync)

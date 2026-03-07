@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TransactionList } from '@/components/transaction/TransactionList'
 import { TransactionModal } from '@/components/transaction/TransactionModal'
+import { ExportModal } from '@/components/export/ExportModal'
 import { Button } from '@/components/common/Button'
 import { useTransactions } from '@/hooks/useTransactions'
 import { TransactionFilter, Transaction } from '@/types/transaction'
@@ -11,6 +12,7 @@ export const Transactions = () => {
     page_size: 10,
   })
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const {
@@ -54,7 +56,10 @@ export const Transactions = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-        <Button onClick={handleCreate}>Add Transaction</Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => setIsExportOpen(true)}>Export CSV</Button>
+          <Button onClick={handleCreate}>Add Transaction</Button>
+        </div>
       </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -127,6 +132,11 @@ export const Transactions = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onPageChange={handlePageChange}
+      />
+
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
       />
 
       <TransactionModal

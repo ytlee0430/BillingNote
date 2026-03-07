@@ -66,7 +66,7 @@ stories:
     epic: "Advanced Features"
     priority: medium
     points: 3
-    status: pending
+    status: completed
 
   - id: "3.4"
     title: "Advanced Search and Tags"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 8
+  completed: 9
   in_progress: 0
   blocked: 0
-  pending: 5
+  pending: 4
