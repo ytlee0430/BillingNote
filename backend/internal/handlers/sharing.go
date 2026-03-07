@@ -5,6 +5,7 @@ import (
 	"billing-note/internal/services"
 	"billing-note/pkg/errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,7 +88,7 @@ func (h *SharingHandler) Pair(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "paired successfully"})
 }
 
-func (h *SharingHandler) ListViewers(c *gin.Context) {
+func (h *SharingHandler) ListConnections(c *gin.Context) {
 	requestID := c.GetString("request_id")
 
 	userID, exists := middleware.GetUserID(c)
@@ -115,4 +116,31 @@ func (h *SharingHandler) ListViewers(c *gin.Context) {
 		"viewers": viewers,
 		"owners":  owners,
 	})
+}
+
+func (h *SharingHandler) RevokeAccess(c *gin.Context) {
+	requestID := c.GetString("request_id")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		appErr := errors.NewUnauthorizedError("User not authenticated")
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	uidStr := c.Param("uid")
+	uid, err := strconv.ParseUint(uidStr, 10, 32)
+	if err != nil {
+		appErr := errors.NewValidationError("Invalid user ID")
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	if err := h.sharingService.Revoke(userID, uint(uid)); err != nil {
+		appErr := errors.NewInternalError("Failed to revoke access", err)
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "access revoked"})
 }

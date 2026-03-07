@@ -87,7 +87,7 @@ stories:
     epic: "Multi-User Sharing"
     priority: low
     points: 5
-    status: pending
+    status: completed
 
   - id: "4.3"
     title: "Sharing Frontend UI"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 11
+  completed: 12
   in_progress: 0
   blocked: 0
-  pending: 2
+  pending: 1
