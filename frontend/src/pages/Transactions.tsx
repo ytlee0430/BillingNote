@@ -63,7 +63,20 @@ export const Transactions = () => {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Filters</h2>
+        <h2 className="text-lg font-semibold mb-4">Search & Filters</h2>
+
+        <div className="mb-4">
+          <input
+            type="text"
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Search transactions..."
+            value={filter.q || ''}
+            onChange={(e) =>
+              handleFilterChange({ q: e.target.value || undefined })
+            }
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -119,6 +132,57 @@ export const Transactions = () => {
             >
               Clear Filters
             </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Min Amount
+            </label>
+            <input
+              type="number"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              placeholder="0"
+              value={filter.min_amount ?? ''}
+              onChange={(e) =>
+                handleFilterChange({
+                  min_amount: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max Amount
+            </label>
+            <input
+              type="number"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              placeholder="No limit"
+              value={filter.max_amount ?? ''}
+              onChange={(e) =>
+                handleFilterChange({
+                  max_amount: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tags
+            </label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              placeholder="tag1,tag2"
+              value={filter.tags || ''}
+              onChange={(e) =>
+                handleFilterChange({ tags: e.target.value || undefined })
+              }
+            />
           </div>
         </div>
       </div>

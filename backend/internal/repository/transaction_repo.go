@@ -5,17 +5,22 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type TransactionFilter struct {
-	UserID    uint
-	Type      string
-	StartDate *time.Time
-	EndDate   *time.Time
+	UserID     uint
+	Type       string
+	StartDate  *time.Time
+	EndDate    *time.Time
 	CategoryID *uint
-	Page      int
-	PageSize  int
+	Query      string
+	Tags       []string
+	MinAmount  *float64
+	MaxAmount  *float64
+	Page       int
+	PageSize   int
 }
 
 // TrendDataPoint represents a single month's income/expense data
@@ -78,6 +83,18 @@ func (r *transactionRepository) List(filter TransactionFilter) ([]models.Transac
 	}
 	if filter.CategoryID != nil {
 		query = query.Where("category_id = ?", *filter.CategoryID)
+	}
+	if filter.Query != "" {
+		query = query.Where("description ILIKE ?", "%"+filter.Query+"%")
+	}
+	if len(filter.Tags) > 0 {
+		query = query.Where("tags @> ?", pq.StringArray(filter.Tags))
+	}
+	if filter.MinAmount != nil {
+		query = query.Where("amount >= ?", *filter.MinAmount)
+	}
+	if filter.MaxAmount != nil {
+		query = query.Where("amount <= ?", *filter.MaxAmount)
 	}
 
 	// Count total

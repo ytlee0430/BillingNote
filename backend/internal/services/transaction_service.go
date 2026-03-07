@@ -25,6 +25,7 @@ type CreateTransactionRequest struct {
 	Description     string    `json:"description"`
 	TransactionDate time.Time `json:"transaction_date" binding:"required"`
 	Source          string    `json:"source"`
+	Tags            []string  `json:"tags"`
 }
 
 type UpdateTransactionRequest struct {
@@ -33,6 +34,7 @@ type UpdateTransactionRequest struct {
 	Type            string    `json:"type" binding:"oneof=income expense"`
 	Description     string    `json:"description"`
 	TransactionDate time.Time `json:"transaction_date"`
+	Tags            []string  `json:"tags"`
 }
 
 type transactionService struct {
@@ -57,6 +59,11 @@ func (s *transactionService) CreateTransaction(userID uint, req *CreateTransacti
 		source = "manual"
 	}
 
+	tags := req.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+
 	transaction := &models.Transaction{
 		UserID:          userID,
 		CategoryID:      req.CategoryID,
@@ -65,6 +72,7 @@ func (s *transactionService) CreateTransaction(userID uint, req *CreateTransacti
 		Description:     req.Description,
 		TransactionDate: req.TransactionDate,
 		Source:          source,
+		Tags:            tags,
 	}
 
 	if err := s.repo.Create(transaction); err != nil {
@@ -120,6 +128,9 @@ func (s *transactionService) UpdateTransaction(id uint, userID uint, req *Update
 	}
 	if !req.TransactionDate.IsZero() {
 		transaction.TransactionDate = req.TransactionDate
+	}
+	if req.Tags != nil {
+		transaction.Tags = req.Tags
 	}
 
 	if err := s.repo.Update(transaction); err != nil {

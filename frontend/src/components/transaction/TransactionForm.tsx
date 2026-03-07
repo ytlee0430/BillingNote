@@ -4,6 +4,7 @@ import { CreateTransactionRequest, Transaction } from '@/types/transaction'
 import { categoriesApi } from '@/api/categories'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
+import { TagInput } from '@/components/common/TagInput'
 
 interface TransactionFormProps {
   transaction?: Transaction | null
@@ -25,6 +26,7 @@ export const TransactionForm = ({
     transaction_date: new Date().toISOString().split('T')[0],
     category_id: undefined,
     source: 'manual',
+    tags: [],
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -43,6 +45,7 @@ export const TransactionForm = ({
         transaction_date: transaction.transaction_date.split('T')[0],
         category_id: transaction.category_id,
         source: transaction.source,
+        tags: transaction.tags || [],
       })
     }
   }, [transaction])
@@ -190,6 +193,17 @@ export const TransactionForm = ({
           onChange={(e) => handleChange('description', e.target.value)}
           error={errors.description}
           placeholder="Enter description"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Tags
+        </label>
+        <TagInput
+          tags={formData.tags || []}
+          onChange={(tags) => handleChange('tags', tags)}
+          placeholder="Add tags (press Enter or comma)"
         />
       </div>
 

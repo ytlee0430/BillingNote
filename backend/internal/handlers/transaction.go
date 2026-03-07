@@ -8,6 +8,7 @@ import (
 	"billing-note/pkg/logger"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -175,6 +176,26 @@ func (h *TransactionHandler) List(c *gin.Context) {
 		if err == nil {
 			catID := uint(categoryID)
 			filter.CategoryID = &catID
+		}
+	}
+
+	if q := c.Query("q"); q != "" {
+		filter.Query = q
+	}
+
+	if tagsStr := c.Query("tags"); tagsStr != "" {
+		filter.Tags = strings.Split(tagsStr, ",")
+	}
+
+	if minStr := c.Query("min_amount"); minStr != "" {
+		if min, err := strconv.ParseFloat(minStr, 64); err == nil {
+			filter.MinAmount = &min
+		}
+	}
+
+	if maxStr := c.Query("max_amount"); maxStr != "" {
+		if max, err := strconv.ParseFloat(maxStr, 64); err == nil {
+			filter.MaxAmount = &max
 		}
 	}
 

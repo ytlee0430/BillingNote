@@ -14,6 +14,7 @@ describe('TransactionList', () => {
       description: 'Test expense',
       transaction_date: '2024-01-15T00:00:00Z',
       source: 'manual',
+      tags: ['food', 'lunch'],
       created_at: '2024-01-15T00:00:00Z',
       updated_at: '2024-01-15T00:00:00Z',
       category: {
@@ -32,6 +33,7 @@ describe('TransactionList', () => {
       description: 'Test income',
       transaction_date: '2024-01-16T00:00:00Z',
       source: 'manual',
+      tags: [],
       created_at: '2024-01-16T00:00:00Z',
       updated_at: '2024-01-16T00:00:00Z',
     },
@@ -53,7 +55,8 @@ describe('TransactionList', () => {
 
     expect(screen.getByText('Test expense')).toBeInTheDocument()
     expect(screen.getByText('Test income')).toBeInTheDocument()
-    expect(screen.getByText('Food')).toBeInTheDocument()
+    // Category "Food" displayed with icon
+    expect(screen.getByText(/Food/)).toBeInTheDocument()
   })
 
   it('displays loading state', () => {
@@ -96,8 +99,11 @@ describe('TransactionList', () => {
   it('displays amount with correct sign and color', () => {
     render(<TransactionList {...defaultProps} />)
 
-    const amounts = screen.getAllByText(/\$\d+\.\d{2}/)
-    expect(amounts.length).toBeGreaterThan(0)
+    // TWD format: $101, $500 (no decimals)
+    const expenseAmount = screen.getByText((_, el) =>
+      el?.tagName === 'SPAN' && el?.classList.contains('text-red-600') && (el?.textContent?.includes('101') ?? false)
+    )
+    expect(expenseAmount).toBeInTheDocument()
   })
 
   it('shows no category text when category is not provided', () => {
@@ -109,8 +115,8 @@ describe('TransactionList', () => {
   it('renders pagination when multiple pages', () => {
     render(<TransactionList {...defaultProps} total={25} pageSize={10} />)
 
-    expect(screen.getByText('Previous')).toBeInTheDocument()
-    expect(screen.getByText('Next')).toBeInTheDocument()
+    expect(screen.getAllByText('Previous').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Next').length).toBeGreaterThan(0)
   })
 
   it('calls onPageChange when pagination button is clicked', () => {

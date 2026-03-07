@@ -73,7 +73,7 @@ stories:
     epic: "Advanced Features"
     priority: low
     points: 5
-    status: pending
+    status: completed
 
   - id: "4.1"
     title: "Pairing Code System"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 9
+  completed: 10
   in_progress: 0
   blocked: 0
-  pending: 4
+  pending: 3

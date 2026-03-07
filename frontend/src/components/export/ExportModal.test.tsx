@@ -58,8 +58,8 @@ describe('ExportModal', () => {
 
     const createObjectURL = vi.fn(() => 'blob:test')
     const revokeObjectURL = vi.fn()
-    global.URL.createObjectURL = createObjectURL
-    global.URL.revokeObjectURL = revokeObjectURL
+    ;(globalThis as any).URL.createObjectURL = createObjectURL
+    ;(globalThis as any).URL.revokeObjectURL = revokeObjectURL
 
     render(<ExportModal isOpen={true} onClose={mockOnClose} />)
     fireEvent.click(screen.getByText('Export CSV'))
