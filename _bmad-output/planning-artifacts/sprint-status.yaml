@@ -45,7 +45,7 @@ stories:
     epic: "Cloud Invoice"
     priority: medium
     points: 5
-    status: pending
+    status: completed
 
   - id: "3.1"
     title: "Advanced Charts"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 4
+  completed: 5
   in_progress: 0
   blocked: 0
-  pending: 9
+  pending: 8

@@ -8,6 +8,7 @@ import {
   PDFPassword,
   PDFPasswordInput,
 } from '@/api/upload'
+import { invoicesApi } from '@/api/invoices'
 
 export const Settings = () => {
   const { user, logout } = useAuthStore()
@@ -17,6 +18,9 @@ export const Settings = () => {
   const [passwordLabels, setPasswordLabels] = useState<string[]>(['', '', '', ''])
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [carrierCode, setCarrierCode] = useState('')
+  const [carrierSaving, setCarrierSaving] = useState(false)
+  const [carrierMessage, setCarrierMessage] = useState<string | null>(null)
 
   useEffect(() => {
     loadPasswords()
@@ -163,6 +167,61 @@ export const Settings = () => {
                 This feature is coming soon
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Invoice Settings</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Set your mobile barcode carrier code to sync invoices from the MOF e-invoice platform.
+          </p>
+
+          {carrierMessage && (
+            <div
+              className={`mb-4 p-3 rounded ${
+                carrierMessage.includes('success')
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {carrierMessage}
+            </div>
+          )}
+
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Carrier Code
+              </label>
+              <input
+                type="text"
+                placeholder="/ABCD123"
+                value={carrierCode}
+                onChange={(e) => setCarrierCode(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+                maxLength={8}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Format: /XXXXXXX (slash + 7 characters)
+              </p>
+            </div>
+            <Button
+              onClick={async () => {
+                setCarrierSaving(true)
+                setCarrierMessage(null)
+                try {
+                  await invoicesApi.updateSettings({ invoice_carrier: carrierCode })
+                  setCarrierMessage('Carrier code saved successfully')
+                } catch {
+                  setCarrierMessage('Failed to save carrier code')
+                } finally {
+                  setCarrierSaving(false)
+                }
+              }}
+              disabled={carrierSaving || !carrierCode}
+            >
+              {carrierSaving ? 'Saving...' : 'Save'}
+            </Button>
           </div>
         </div>
 
