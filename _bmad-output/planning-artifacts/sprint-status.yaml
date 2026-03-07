@@ -80,7 +80,7 @@ stories:
     epic: "Multi-User Sharing"
     priority: low
     points: 3
-    status: pending
+    status: completed
 
   - id: "4.2"
     title: "Permission Middleware and View-As"
@@ -99,7 +99,7 @@ stories:
 summary:
   total_stories: 13
   total_points: 58
-  completed: 10
+  completed: 11
   in_progress: 0
   blocked: 0
-  pending: 3
+  pending: 2

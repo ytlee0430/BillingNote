@@ -105,6 +105,11 @@ func main() {
 	exportService := services.NewExportService(transactionRepo)
 	exportHandler := handlers.NewExportHandler(exportService)
 
+	// Initialize Sharing service
+	sharingRepo := repository.NewSharingRepository(database.GetDB())
+	sharingService := services.NewSharingService(sharingRepo)
+	sharingHandler := handlers.NewSharingHandler(sharingService)
+
 	var gmailHandler *handlers.GmailHandler
 	if gmailService != nil {
 		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
@@ -177,6 +182,12 @@ func main() {
 
 		// Export
 		api.GET("/export/csv", exportHandler.ExportCSV)
+
+		// Sharing
+		api.GET("/shared/my-code", sharingHandler.GetMyCode)
+		api.POST("/shared/regenerate-code", sharingHandler.RegenerateCode)
+		api.POST("/shared/pair", sharingHandler.Pair)
+		api.GET("/shared/list", sharingHandler.ListViewers)
 
 		// Invoice
 		api.POST("/invoice/sync", invoiceHandler.Sync)
