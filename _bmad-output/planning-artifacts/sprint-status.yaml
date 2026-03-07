@@ -94,12 +94,12 @@ stories:
     epic: "Multi-User Sharing"
     priority: low
     points: 3
-    status: pending
+    status: completed
 
 summary:
   total_stories: 13
   total_points: 58
-  completed: 12
+  completed: 13
   in_progress: 0
   blocked: 0
-  pending: 1
+  pending: 0

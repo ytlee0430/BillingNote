@@ -10,6 +10,7 @@ import {
 } from '@/api/upload'
 import { invoicesApi } from '@/api/invoices'
 import { GmailConnect } from '@/components/gmail/GmailConnect'
+import { SharingSettings } from '@/components/sharing/SharingSettings'
 import { gmailApi } from '@/api/gmail'
 
 export const Settings = () => {
@@ -200,6 +201,8 @@ export const Settings = () => {
         )}
 
         <GmailConnect />
+
+        <SharingSettings />
 
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Invoice Settings</h2>

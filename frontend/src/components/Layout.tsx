@@ -1,7 +1,10 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/authStore'
+import { useViewAsStore } from '@/store/viewAsStore'
+import { sharingApi } from '@/api/sharing'
+import { SharedAccess } from '@/types/sharing'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,6 +14,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation()
   const { logout } = useAuth()
   const { user } = useAuthStore()
+  const { viewAsUserId, viewAsEmail, isViewingOther, setViewAs, clearViewAs } = useViewAsStore()
+  const [owners, setOwners] = useState<SharedAccess[]>([])
+
+  useEffect(() => {
+    sharingApi.getConnections()
+      .then((res) => setOwners(res.owners || []))
+      .catch(() => {})
+  }, [])
 
   const navItems = [
     { path: '/dashboard', label: '儀表板', icon: '📊' },
@@ -49,20 +60,55 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 ))}
               </div>
             </div>
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <span className="text-sm text-gray-700 mr-4">{user?.email}</span>
-                <button
-                  onClick={logout}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            <div className="flex items-center gap-3">
+              {owners.length > 0 && (
+                <select
+                  className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                  value={viewAsUserId ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (!val) {
+                      clearViewAs()
+                    } else {
+                      const owner = owners.find(o => o.owner_id === Number(val))
+                      setViewAs(Number(val), owner?.owner?.email || null)
+                    }
+                  }}
                 >
-                  登出
-                </button>
-              </div>
+                  <option value="">My Data</option>
+                  {owners.map((o) => (
+                    <option key={o.owner_id} value={o.owner_id}>
+                      {o.owner?.email || `User #${o.owner_id}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <span className="text-sm text-gray-700">{user?.email}</span>
+              <button
+                onClick={logout}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              >
+                登出
+              </button>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Read-only banner */}
+      {isViewingOther && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-center">
+          <span className="text-sm text-yellow-800">
+            You are viewing {viewAsEmail || 'another user'}'s data (read-only).{' '}
+            <button
+              onClick={clearViewAs}
+              className="underline font-medium hover:text-yellow-900"
+            >
+              Switch back
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
