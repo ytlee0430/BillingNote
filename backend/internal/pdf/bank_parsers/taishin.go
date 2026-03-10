@@ -40,7 +40,8 @@ func (p *TaishinParser) Parse(content string) ([]pdf.Transaction, error) {
 
 	// Taishin statement patterns
 	// Format varies: YYYY/MM/DD or MM/DD description amount
-	datePattern := regexp.MustCompile(`(\d{4}/\d{2}/\d{2}|\d{2}/\d{2})\s+(.+?)\s+([\d,]+)`)
+	// Amount is always the LAST number on the line (greedy .+ for description)
+	datePattern := regexp.MustCompile(`^(\d{4}/\d{2}/\d{2}|\d{2}/\d{2})\s+(?:\d{4}/\d{2}/\d{2}\s+|\d{2}/\d{2}\s+)?(.+)\s+([\d,]+)\s*$`)
 
 	lines := strings.Split(content, "\n")
 	currentYear := time.Now().Year()
@@ -73,9 +74,12 @@ func (p *TaishinParser) Parse(content string) ([]pdf.Transaction, error) {
 			}
 
 			description := strings.TrimSpace(matches[2])
+			if description == "" {
+				continue
+			}
 			amountStr := strings.ReplaceAll(matches[3], ",", "")
 			amount, err := strconv.ParseFloat(amountStr, 64)
-			if err != nil {
+			if err != nil || amount == 0 {
 				continue
 			}
 

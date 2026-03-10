@@ -38,10 +38,11 @@ func (p *CathayParser) CanParse(content string) bool {
 func (p *CathayParser) Parse(content string) ([]pdf.Transaction, error) {
 	transactions := make([]pdf.Transaction, 0)
 
-	// Common patterns for Cathay statements
-	// Format: MM/DD description amount
-	// Example: 12/25 全聯福利中心 1,234
-	datePattern := regexp.MustCompile(`(\d{2}/\d{2})\s+(.+?)\s+([\d,]+)`)
+	// Cathay statement format: MM/DD  [MM/DD]  description  amount
+	// The amount is always the LAST number on the line.
+	// Use greedy .+ so amount captures only the trailing number.
+	// Optionally match a second MM/DD (posting date) right after the first.
+	datePattern := regexp.MustCompile(`^(\d{2}/\d{2})\s+(?:\d{2}/\d{2}\s+)?(.+)\s+([\d,]+)\s*$`)
 
 	lines := strings.Split(content, "\n")
 	currentYear := time.Now().Year()
@@ -57,6 +58,10 @@ func (p *CathayParser) Parse(content string) ([]pdf.Transaction, error) {
 				month, _ := strconv.Atoi(dateParts[0])
 				day, _ := strconv.Atoi(dateParts[1])
 
+				if month < 1 || month > 12 || day < 1 || day > 31 {
+					continue
+				}
+
 				// Determine year (handle year boundary)
 				year := currentYear
 				if month > int(time.Now().Month()) {
@@ -65,13 +70,16 @@ func (p *CathayParser) Parse(content string) ([]pdf.Transaction, error) {
 
 				date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
 
-				// Parse description
+				// Parse description (trim trailing spaces from greedy match)
 				description := strings.TrimSpace(matches[2])
+				if description == "" {
+					continue
+				}
 
 				// Parse amount (remove commas)
 				amountStr := strings.ReplaceAll(matches[3], ",", "")
 				amount, err := strconv.ParseFloat(amountStr, 64)
-				if err != nil {
+				if err != nil || amount == 0 {
 					continue
 				}
 
