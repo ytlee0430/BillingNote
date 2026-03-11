@@ -126,17 +126,23 @@ func extractTextFromPDF(pdfPath string, password string) (string, error) {
 	args = append(args, pdfPath, "-") // "-" means output to stdout
 
 	cmd := exec.Command("pdftotext", args...)
-	output, err := cmd.Output()
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	text := stdout.String()
+
+	// pdftotext may return non-zero exit code with warnings but still produce valid text
+	if strings.TrimSpace(text) != "" {
+		return text, nil
+	}
+
 	if err != nil {
-		return "", fmt.Errorf("pdftotext failed: %w", err)
+		return "", fmt.Errorf("pdftotext failed: %w (stderr: %s)", err, stderr.String())
 	}
 
-	text := string(output)
-	if strings.TrimSpace(text) == "" {
-		return "", errors.New("no text extracted from PDF")
-	}
-
-	return text, nil
+	return "", errors.New("no text extracted from PDF")
 }
 
 // Parse parses a PDF file and returns transactions
