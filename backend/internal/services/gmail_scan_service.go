@@ -75,11 +75,13 @@ func (c *realGmailClient) GetAttachment(messageID, attachmentID string) ([]byte,
 
 // ScanResult represents the result of a Gmail scan
 type ScanResult struct {
-	EmailsFound    int              `json:"emails_found"`
-	PDFsDownloaded int              `json:"pdfs_downloaded"`
-	ParseResults   []UploadResult   `json:"parse_results,omitempty"`
-	Status         string           `json:"status"`
-	ErrorMessage   string           `json:"error_message,omitempty"`
+	Scanned      int            `json:"scanned"`
+	Downloaded   int            `json:"downloaded"`
+	AutoParsed   int            `json:"auto_parsed"`
+	Failed       int            `json:"failed"`
+	ParseResults []UploadResult `json:"parse_results,omitempty"`
+	Status       string         `json:"status"`
+	ErrorMessage string         `json:"error_message,omitempty"`
 }
 
 // GmailScanService handles Gmail email scanning and PDF download
@@ -162,13 +164,15 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 		return nil, errors.NewInternalError("Failed to search Gmail", err)
 	}
 
-	emailsFound := len(messages)
-	pdfsDownloaded := 0
+	scanned := len(messages)
+	downloaded := 0
+	autoParsed := 0
+	failed := 0
 	var parseResults []UploadResult
 
 	log.WithFields(logger.Fields{
 		"user_id":      userID,
-		"emails_found": emailsFound,
+		"emails_found": scanned,
 	}).Info("Gmail search completed")
 
 	// Process each email
@@ -194,7 +198,7 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 			continue
 		}
 
-		pdfsDownloaded += len(pdfPaths)
+		downloaded += len(pdfPaths)
 
 		// Parse downloaded PDFs using existing pipeline
 		if s.uploadService != nil {
@@ -210,7 +214,13 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 						Filename: filepath.Base(pdfPath),
 						Error:    err.Error(),
 					})
+					failed++
 					continue
+				}
+				if result.Error != "" {
+					failed++
+				} else {
+					autoParsed++
 				}
 				parseResults = append(parseResults, *result)
 			}
@@ -224,25 +234,28 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 	// Record scan history
 	status := "completed"
 	errMsg := ""
-	if pdfsDownloaded == 0 && emailsFound > 0 {
+	if downloaded == 0 && scanned > 0 {
 		status = "no_pdfs"
 		errMsg = "Emails found but no PDF attachments"
 	}
-	s.recordScanHistory(userID, emailsFound, pdfsDownloaded, status, errMsg)
+	s.recordScanHistory(userID, scanned, downloaded, status, errMsg)
 
 	log.WithFields(logger.Fields{
 		"user_id":         userID,
-		"emails_found":    emailsFound,
-		"pdfs_downloaded": pdfsDownloaded,
-		"parse_results":   len(parseResults),
+		"emails_found":    scanned,
+		"pdfs_downloaded": downloaded,
+		"auto_parsed":     autoParsed,
+		"failed":          failed,
 	}).Info("Gmail scan completed")
 
 	return &ScanResult{
-		EmailsFound:    emailsFound,
-		PDFsDownloaded: pdfsDownloaded,
-		ParseResults:   parseResults,
-		Status:         status,
-		ErrorMessage:   errMsg,
+		Scanned:      scanned,
+		Downloaded:   downloaded,
+		AutoParsed:   autoParsed,
+		Failed:       failed,
+		ParseResults: parseResults,
+		Status:       status,
+		ErrorMessage: errMsg,
 	}, nil
 }
 

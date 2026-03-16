@@ -91,7 +91,7 @@ func Load() (*Config, error) {
 		Google: GoogleConfig{
 			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
-			RedirectURI:  getEnv("GOOGLE_REDIRECT_URI", "http://localhost:5173/settings/gmail/callback"),
+			RedirectURI:  getEnv("GOOGLE_REDIRECT_URI", "http://localhost:5173/settings"),
 		},
 		EInvoice: EInvoiceConfig{
 			AppID:  getEnv("EINVOICE_APP_ID", ""),

@@ -191,6 +191,28 @@ func (h *GmailHandler) UpdateSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Gmail settings updated"})
 }
 
+// GetSettings returns Gmail scan settings
+// GET /api/gmail/settings
+func (h *GmailHandler) GetSettings(c *gin.Context) {
+	requestID := c.GetString("request_id")
+
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		appErr := errors.NewUnauthorizedError("User not authenticated")
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	settings, err := h.gmailService.GetSettings(userID)
+	if err != nil {
+		appErr := errors.NewInternalError("Failed to get Gmail settings", err)
+		c.JSON(appErr.HTTPStatus, appErr.ToResponse(requestID))
+		return
+	}
+
+	c.JSON(http.StatusOK, settings)
+}
+
 // TriggerScan triggers a Gmail scan
 // POST /api/gmail/scan
 func (h *GmailHandler) TriggerScan(c *gin.Context) {

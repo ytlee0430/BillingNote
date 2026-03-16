@@ -145,8 +145,8 @@ func TestTriggerScan_NoEmails(t *testing.T) {
 	result, err := scanSvc.TriggerScan(1)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, 0, result.EmailsFound)
-	assert.Equal(t, 0, result.PDFsDownloaded)
+	assert.Equal(t, 0, result.Scanned)
+	assert.Equal(t, 0, result.Downloaded)
 	assert.Equal(t, "completed", result.Status)
 }
 
@@ -195,8 +195,8 @@ func TestTriggerScan_WithPDFAttachment(t *testing.T) {
 	result, err := scanSvc.TriggerScan(1)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, 1, result.EmailsFound)
-	assert.Equal(t, 1, result.PDFsDownloaded)
+	assert.Equal(t, 1, result.Scanned)
+	assert.Equal(t, 1, result.Downloaded)
 
 	client.AssertCalled(t, "GetAttachment", "msg1", "att1")
 }
@@ -244,8 +244,8 @@ func TestTriggerScan_SkipNonPDFAttachments(t *testing.T) {
 
 	result, err := scanSvc.TriggerScan(1)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, result.EmailsFound)
-	assert.Equal(t, 0, result.PDFsDownloaded)
+	assert.Equal(t, 1, result.Scanned)
+	assert.Equal(t, 0, result.Downloaded)
 
 	// Should NOT have called GetAttachment since it's not a PDF
 	client.AssertNotCalled(t, "GetAttachment", mock.Anything, mock.Anything)

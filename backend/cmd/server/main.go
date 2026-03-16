@@ -166,6 +166,7 @@ func main() {
 			api.POST("/gmail/callback", gmailHandler.HandleCallback)
 			api.POST("/gmail/scan", gmailHandler.TriggerScan)
 			api.GET("/gmail/status", gmailHandler.GetStatus)
+			api.GET("/gmail/settings", gmailHandler.GetSettings)
 			api.PUT("/gmail/settings", gmailHandler.UpdateSettings)
 			api.DELETE("/gmail/disconnect", gmailHandler.Disconnect)
 		}
