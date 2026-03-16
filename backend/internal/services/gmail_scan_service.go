@@ -78,6 +78,7 @@ type ScanResult struct {
 	Scanned      int            `json:"scanned"`
 	Downloaded   int            `json:"downloaded"`
 	AutoParsed   int            `json:"auto_parsed"`
+	Imported     int            `json:"imported"`
 	Failed       int            `json:"failed"`
 	ParseResults []UploadResult `json:"parse_results,omitempty"`
 	Status       string         `json:"status"`
@@ -167,6 +168,7 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 	scanned := len(messages)
 	downloaded := 0
 	autoParsed := 0
+	totalImported := 0
 	failed := 0
 	var parseResults []UploadResult
 
@@ -220,6 +222,24 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 				if result.Error != "" {
 					failed++
 				} else {
+					// Auto-import parsed transactions into database
+					imported, importErr := s.uploadService.ImportTransactions(userID, result.Transactions)
+					if importErr != nil {
+						log.WithFields(logger.Fields{
+							"user_id":  userID,
+							"pdf_path": pdfPath,
+							"error":    importErr.Error(),
+						}).Warn("Failed to import transactions from parsed PDF")
+					} else {
+						totalImported += imported
+						if imported > 0 {
+							log.WithFields(logger.Fields{
+								"user_id":  userID,
+								"pdf_path": pdfPath,
+								"imported": imported,
+							}).Info("Auto-imported transactions from Gmail PDF")
+						}
+					}
 					autoParsed++
 				}
 				parseResults = append(parseResults, *result)
@@ -241,17 +261,19 @@ func (s *GmailScanService) TriggerScan(userID uint) (*ScanResult, error) {
 	s.recordScanHistory(userID, scanned, downloaded, status, errMsg)
 
 	log.WithFields(logger.Fields{
-		"user_id":         userID,
-		"emails_found":    scanned,
-		"pdfs_downloaded": downloaded,
-		"auto_parsed":     autoParsed,
-		"failed":          failed,
+		"user_id":            userID,
+		"emails_found":       scanned,
+		"pdfs_downloaded":    downloaded,
+		"auto_parsed":        autoParsed,
+		"total_imported":     totalImported,
+		"failed":             failed,
 	}).Info("Gmail scan completed")
 
 	return &ScanResult{
 		Scanned:      scanned,
 		Downloaded:   downloaded,
 		AutoParsed:   autoParsed,
+		Imported:     totalImported,
 		Failed:       failed,
 		ParseResults: parseResults,
 		Status:       status,
@@ -272,22 +294,17 @@ func (s *GmailScanService) GetScanHistory(userID uint, limit int) ([]models.Gmai
 func (s *GmailScanService) buildQuery(rule *models.GmailScanRule) string {
 	var parts []string
 
-	// Sender keywords (OR)
-	if len(rule.SenderKeywords) > 0 {
-		senderParts := make([]string, len(rule.SenderKeywords))
-		for i, kw := range rule.SenderKeywords {
-			senderParts[i] = fmt.Sprintf("from:%s", kw)
-		}
-		parts = append(parts, "{"+strings.Join(senderParts, " ")+"}")
+	// Combine sender and subject keywords into one OR group
+	// Gmail syntax: {from:X from:Y subject:A subject:B} matches any of these
+	var orParts []string
+	for _, kw := range rule.SenderKeywords {
+		orParts = append(orParts, fmt.Sprintf("from:%s", kw))
 	}
-
-	// Subject keywords (OR)
-	if len(rule.SubjectKeywords) > 0 {
-		subjectParts := make([]string, len(rule.SubjectKeywords))
-		for i, kw := range rule.SubjectKeywords {
-			subjectParts[i] = fmt.Sprintf("subject:%s", kw)
-		}
-		parts = append(parts, "{"+strings.Join(subjectParts, " ")+"}")
+	for _, kw := range rule.SubjectKeywords {
+		orParts = append(orParts, fmt.Sprintf("subject:%s", kw))
+	}
+	if len(orParts) > 0 {
+		parts = append(parts, "{"+strings.Join(orParts, " ")+"}")
 	}
 
 	// Require attachment
@@ -295,9 +312,12 @@ func (s *GmailScanService) buildQuery(rule *models.GmailScanRule) string {
 		parts = append(parts, "has:attachment")
 	}
 
-	// Only search after last scan
+	// Time range: use last scan time, or default to 6 months back
 	if rule.LastScanAt != nil {
 		parts = append(parts, fmt.Sprintf("after:%s", rule.LastScanAt.Format("2006/01/02")))
+	} else {
+		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+		parts = append(parts, fmt.Sprintf("after:%s", sixMonthsAgo.Format("2006/01/02")))
 	}
 
 	return strings.Join(parts, " ")
@@ -334,8 +354,9 @@ func (s *GmailScanService) downloadPDFAttachments(client GmailAPIClient, userID 
 		safeFilename := fmt.Sprintf("%s_%s", msg.Id, sanitizeFilename(filename))
 		filePath := filepath.Join(dir, safeFilename)
 
-		// Skip if already downloaded
+		// Skip download if already exists, but still include for parsing
 		if _, err := os.Stat(filePath); err == nil {
+			pdfPaths = append(pdfPaths, filePath)
 			continue
 		}
 

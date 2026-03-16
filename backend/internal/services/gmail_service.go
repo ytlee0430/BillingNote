@@ -48,7 +48,6 @@ func NewGmailService(
 		RedirectURL:  redirectURI,
 		Scopes: []string{
 			gmail.GmailReadonlyScope,
-			gmail.GmailMetadataScope,
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -117,7 +116,7 @@ func (s *GmailService) HandleCallback(userID uint, code, state string) error {
 		AccessTokenEncrypted:  accessTokenEnc,
 		RefreshTokenEncrypted: refreshTokenEnc,
 		TokenExpiry:           &token.Expiry,
-		Scopes:                gmail.GmailReadonlyScope + " " + gmail.GmailMetadataScope,
+		Scopes:                gmail.GmailReadonlyScope,
 	}
 
 	if err := s.repo.SaveToken(gmailToken); err != nil {

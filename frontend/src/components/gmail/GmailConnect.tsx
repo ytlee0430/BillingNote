@@ -48,13 +48,22 @@ export const GmailConnect = () => {
   const scanMutation = useMutation({
     mutationFn: () => gmailApi.triggerScan(),
     onSuccess: async (result) => {
-      setScanMessage(
-        `Scan complete: ${result.scanned} emails scanned, ${result.downloaded} PDFs downloaded`
-      )
+      const parts = [
+        `掃描 ${result.scanned} 封郵件`,
+        `下載 ${result.downloaded} 個 PDF`,
+        `解析成功 ${result.auto_parsed} 個`,
+        `匯入 ${result.imported} 筆交易`,
+      ]
+      if (result.failed > 0) {
+        parts.push(`失敗 ${result.failed} 個`)
+      }
+      setScanMessage(parts.join('，'))
       await queryClient.invalidateQueries({ queryKey: ['gmail-status'] })
+      // Refresh transaction list so dashboard updates
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
     onError: () => {
-      setScanMessage('Scan failed. Please try again.')
+      setScanMessage('掃描失敗，請重試。')
     },
   })
 

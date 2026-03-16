@@ -49,7 +49,7 @@ type GmailScanHistory struct {
 	UserID         uint      `gorm:"not null;index" json:"user_id"`
 	ScanAt         time.Time `gorm:"default:now()" json:"scan_at"`
 	EmailsFound    int       `gorm:"default:0" json:"emails_found"`
-	PDFsDownloaded int       `gorm:"default:0" json:"pdfs_downloaded"`
+	PDFsDownloaded int       `gorm:"column:pdfs_downloaded;default:0" json:"pdfs_downloaded"`
 	Status         string    `gorm:"default:'completed';size:20" json:"status"`
 	ErrorMessage   string    `json:"error_message,omitempty"`
 

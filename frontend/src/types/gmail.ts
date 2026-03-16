@@ -25,6 +25,7 @@ export interface GmailScanResult {
   scanned: number
   downloaded: number
   auto_parsed: number
+  imported: number
   failed: number
 }
 
