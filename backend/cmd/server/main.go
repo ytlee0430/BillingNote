@@ -59,6 +59,11 @@ func main() {
 
 	// Initialize upload service
 	uploadService := services.NewUploadService(database.GetDB(), pdfPasswordService, cfg.Upload.Dir)
+
+	// Initialize category keyword service
+	catKeywordRepo := repository.NewCategoryKeywordRepository(database.GetDB())
+	catKeywordService := services.NewCategoryKeywordService(catKeywordRepo, categoryRepo, database.GetDB())
+	uploadService.SetCategoryKeywordService(catKeywordService)
 	logger.Debug("Services initialized")
 
 	// Initialize handlers
@@ -68,6 +73,7 @@ func main() {
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	catKeywordHandler := handlers.NewCategoryKeywordHandler(catKeywordService)
 	logger.Debug("Handlers initialized")
 
 	// Setup Gin
@@ -124,6 +130,14 @@ func main() {
 		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
 		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
 		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
+
+		// Category Keyword Rules
+		api.GET("/category-keywords", catKeywordHandler.List)
+		api.POST("/category-keywords", catKeywordHandler.Add)
+		api.PUT("/category-keywords/batch", catKeywordHandler.BatchSet)
+		api.DELETE("/category-keywords/:id", catKeywordHandler.Delete)
+		api.POST("/category-keywords/init-defaults", catKeywordHandler.InitDefaults)
+		api.POST("/category-keywords/reclassify", catKeywordHandler.Reclassify)
 	}
 
 	// Start server
