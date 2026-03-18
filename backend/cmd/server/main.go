@@ -79,6 +79,11 @@ func main() {
 	} else {
 		logger.Warn("Gmail service disabled: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set")
 	}
+
+	// Initialize category keyword service
+	catKeywordRepo := repository.NewCategoryKeywordRepository(database.GetDB())
+	catKeywordService := services.NewCategoryKeywordService(catKeywordRepo, categoryRepo, database.GetDB())
+	uploadService.SetCategoryKeywordService(catKeywordService)
 	logger.Debug("Services initialized")
 
 	// Initialize handlers
@@ -115,6 +120,7 @@ func main() {
 		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
 		gmailHandler = handlers.NewGmailHandler(gmailService, gmailScanService)
 	}
+	catKeywordHandler := handlers.NewCategoryKeywordHandler(catKeywordService)
 	logger.Debug("Handlers initialized")
 
 	// Setup Gin
@@ -170,6 +176,14 @@ func main() {
 			api.PUT("/gmail/settings", gmailHandler.UpdateSettings)
 			api.DELETE("/gmail/disconnect", gmailHandler.Disconnect)
 		}
+
+		// Category Keyword Rules (user-specific, no view_as)
+		api.GET("/category-keywords", catKeywordHandler.List)
+		api.POST("/category-keywords", catKeywordHandler.Add)
+		api.PUT("/category-keywords/batch", catKeywordHandler.BatchSet)
+		api.DELETE("/category-keywords/:id", catKeywordHandler.Delete)
+		api.POST("/category-keywords/init-defaults", catKeywordHandler.InitDefaults)
+		api.POST("/category-keywords/reclassify", catKeywordHandler.Reclassify)
 	}
 
 	// Data routes with view_as support

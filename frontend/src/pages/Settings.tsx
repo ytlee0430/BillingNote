@@ -12,6 +12,7 @@ import { invoicesApi } from '@/api/invoices'
 import { GmailConnect } from '@/components/gmail/GmailConnect'
 import { SharingSettings } from '@/components/sharing/SharingSettings'
 import { gmailApi } from '@/api/gmail'
+import { CategoryKeywords } from '@/components/settings/CategoryKeywords'
 
 export const Settings = () => {
   const { user, logout } = useAuthStore()
@@ -328,6 +329,8 @@ export const Settings = () => {
             {saving ? 'Saving...' : 'Save Passwords'}
           </Button>
         </div>
+
+        <CategoryKeywords />
 
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">About</h2>

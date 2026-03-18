@@ -20,6 +20,12 @@ type UploadService struct {
 	passwordService *PDFPasswordService
 	uploadDir       string
 	registry        *pdf.ParserRegistry
+	catKeywordSvc   *CategoryKeywordService
+}
+
+// SetCategoryKeywordService injects the keyword service for auto-classification
+func (s *UploadService) SetCategoryKeywordService(svc *CategoryKeywordService) {
+	s.catKeywordSvc = svc
 }
 
 // ParsedTransaction represents a transaction parsed from PDF
@@ -169,12 +175,17 @@ func (s *UploadService) ImportTransactions(userID uint, transactions []ParsedTra
 			Source:          "pdf_import",
 		}
 
-		// Try to find or create category
+		// Try to find category from parsed data
 		if t.Category != "" {
 			var category models.Category
-			if err := s.db.Where("user_id = ? AND name = ?", userID, t.Category).First(&category).Error; err == nil {
+			if err := s.db.Where("name = ?", t.Category).First(&category).Error; err == nil {
 				transaction.CategoryID = &category.ID
 			}
+		}
+
+		// Auto-classify by keyword rules if no category assigned
+		if transaction.CategoryID == nil && s.catKeywordSvc != nil {
+			transaction.CategoryID = s.catKeywordSvc.MatchCategory(userID, t.Description)
 		}
 
 		if err := s.db.Create(&transaction).Error; err != nil {

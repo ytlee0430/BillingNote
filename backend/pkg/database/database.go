@@ -39,6 +39,7 @@ func AutoMigrate() error {
 		&models.User{},
 		&models.Category{},
 		&models.Transaction{},
+		&models.CategoryKeyword{},
 	)
 }
 
