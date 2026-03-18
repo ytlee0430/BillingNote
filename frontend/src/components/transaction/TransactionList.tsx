@@ -94,7 +94,19 @@ export const TransactionList = ({
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900">
-                  {transaction.description || '-'}
+                  <div>{transaction.description || '-'}</div>
+                  {transaction.tags && transaction.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {transaction.tags.map((tag, i) => (
+                        <span
+                          key={i}
+                          className="inline-block bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <span

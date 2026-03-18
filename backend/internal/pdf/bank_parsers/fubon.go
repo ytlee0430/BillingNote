@@ -40,8 +40,9 @@ func (p *FubonParser) Parse(content string) ([]pdf.Transaction, error) {
 
 	// Fubon uses ROC calendar (民國年)
 	// Format: 114/12/25 or 12/25 description amount
-	rocDatePattern := regexp.MustCompile(`(\d{3}/\d{2}/\d{2})\s+(.+?)\s+([\d,]+)`)
-	simpleDatePattern := regexp.MustCompile(`(\d{2}/\d{2})\s+(.+?)\s+([\d,]+)`)
+	// Amount is always the LAST number on the line (greedy .+ for description)
+	rocDatePattern := regexp.MustCompile(`^(\d{3}/\d{2}/\d{2})\s+(?:\d{3}/\d{2}/\d{2}\s+)?(.+)\s+([\d,]+)\s*$`)
+	simpleDatePattern := regexp.MustCompile(`^(\d{2}/\d{2})\s+(?:\d{2}/\d{2}\s+)?(.+)\s+([\d,]+)\s*$`)
 
 	lines := strings.Split(content, "\n")
 	currentYear := time.Now().Year()
@@ -62,9 +63,12 @@ func (p *FubonParser) Parse(content string) ([]pdf.Transaction, error) {
 			date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
 
 			description := strings.TrimSpace(matches[2])
+			if description == "" {
+				continue
+			}
 			amountStr := strings.ReplaceAll(matches[3], ",", "")
 			amount, err := strconv.ParseFloat(amountStr, 64)
-			if err != nil {
+			if err != nil || amount == 0 {
 				continue
 			}
 
@@ -91,9 +95,12 @@ func (p *FubonParser) Parse(content string) ([]pdf.Transaction, error) {
 			date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
 
 			description := strings.TrimSpace(matches[2])
+			if description == "" {
+				continue
+			}
 			amountStr := strings.ReplaceAll(matches[3], ",", "")
 			amount, err := strconv.ParseFloat(amountStr, 64)
-			if err != nil {
+			if err != nil || amount == 0 {
 				continue
 			}
 

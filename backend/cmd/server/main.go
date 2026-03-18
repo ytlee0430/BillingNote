@@ -7,57 +7,125 @@ import (
 	"billing-note/internal/services"
 	"billing-note/pkg/config"
 	"billing-note/pkg/database"
+	"billing-note/pkg/logger"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Initialize logger
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	jsonLogs := os.Getenv("LOG_FORMAT") == "json"
+	logger.Init(logLevel, jsonLogs)
+
+	logger.Info("Starting Billing Note Server...")
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		logger.WithError(err).Fatal("Failed to load configuration")
 	}
+	logger.Info("Configuration loaded successfully")
 
 	// Connect to database
 	if err := database.Connect(&cfg.Database); err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		logger.WithError(err).Fatal("Failed to connect to database")
 	}
 	defer database.Close()
+	logger.Info("Database connected successfully")
 
 	// Initialize repositories
+	logger.Debug("Initializing repositories...")
 	userRepo := repository.NewUserRepository(database.GetDB())
 	categoryRepo := repository.NewCategoryRepository(database.GetDB())
 	transactionRepo := repository.NewTransactionRepository(database.GetDB())
+	logger.Debug("Repositories initialized")
 
 	// Initialize services
+	logger.Debug("Initializing services...")
 	authService := services.NewAuthService(userRepo, cfg.JWT.Secret, cfg.JWT.Expiry)
 	transactionService := services.NewTransactionService(transactionRepo)
 
 	// Initialize PDF password service
 	pdfPasswordService, err := services.NewPDFPasswordService(database.GetDB(), cfg.Encryption.Key)
 	if err != nil {
-		log.Fatalf("Failed to initialize PDF password service: %v", err)
+		logger.WithError(err).Fatal("Failed to initialize PDF password service")
 	}
 
 	// Initialize upload service
 	uploadService := services.NewUploadService(database.GetDB(), pdfPasswordService, cfg.Upload.Dir)
 
+	// Initialize Gmail service
+	gmailRepo := repository.NewGmailRepository(database.GetDB())
+	var gmailService *services.GmailService
+	if cfg.Google.ClientID != "" && cfg.Google.ClientSecret != "" {
+		gmailService, err = services.NewGmailService(
+			gmailRepo,
+			cfg.Encryption.Key,
+			cfg.Google.ClientID,
+			cfg.Google.ClientSecret,
+			cfg.Google.RedirectURI,
+			cfg.JWT.Secret,
+		)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to initialize Gmail service")
+		}
+		logger.Info("Gmail service initialized")
+	} else {
+		logger.Warn("Gmail service disabled: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set")
+	}
+	logger.Debug("Services initialized")
+
 	// Initialize handlers
+	logger.Debug("Initializing handlers...")
 	authHandler := handlers.NewAuthHandler(authService)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	pdfPasswordHandler := handlers.NewPDFPasswordHandler(pdfPasswordService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	// Initialize Invoice service
+	invoiceRepo := repository.NewInvoiceRepository(database.GetDB())
+	invoiceService := services.NewInvoiceService(invoiceRepo, cfg.EInvoice.APIURL, cfg.EInvoice.AppID)
+	logger.Info("Invoice service initialized")
+
+	invoiceHandler := handlers.NewInvoiceHandler(invoiceService, database.GetDB())
+
+	// Initialize Budget service
+	budgetRepo := repository.NewBudgetRepository(database.GetDB())
+	budgetService := services.NewBudgetService(budgetRepo, transactionRepo)
+	budgetHandler := handlers.NewBudgetHandler(budgetService)
+	logger.Info("Budget service initialized")
+
+	// Initialize Export service
+	exportService := services.NewExportService(transactionRepo)
+	exportHandler := handlers.NewExportHandler(exportService)
+
+	// Initialize Sharing service
+	sharingRepo := repository.NewSharingRepository(database.GetDB())
+	sharingService := services.NewSharingService(sharingRepo)
+	sharingHandler := handlers.NewSharingHandler(sharingService)
+
+	var gmailHandler *handlers.GmailHandler
+	if gmailService != nil {
+		gmailScanService := services.NewGmailScanService(gmailService, uploadService, gmailRepo, cfg.Upload.Dir)
+		gmailHandler = handlers.NewGmailHandler(gmailService, gmailScanService)
+	}
+	logger.Debug("Handlers initialized")
 
 	// Setup Gin
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	r := gin.Default()
+	r := gin.New() // Use gin.New() instead of gin.Default() to have full control over middleware
 
-	// Middleware
+	// Middleware - Add logging middleware first
+	r.Use(gin.Recovery()) // Panic recovery
+	r.Use(middleware.LoggingMiddleware()) // Custom logging
 	r.Use(middleware.CORSMiddleware(cfg.Server.AllowOrigins))
 
 	// Health check
@@ -79,36 +147,83 @@ func main() {
 		// Auth
 		api.GET("/auth/me", authHandler.Me)
 
-		// Categories
-		api.GET("/categories", categoryHandler.GetAll)
-		api.GET("/categories/type/:type", categoryHandler.GetByType)
+		// Sharing (no view_as needed)
+		api.GET("/shared/my-code", sharingHandler.GetMyCode)
+		api.POST("/shared/regenerate-code", sharingHandler.RegenerateCode)
+		api.POST("/shared/pair", sharingHandler.Pair)
+		api.GET("/shared/connections", sharingHandler.ListConnections)
+		api.DELETE("/shared/connections/:uid", sharingHandler.RevokeAccess)
 
-		// Transactions
-		api.POST("/transactions", transactionHandler.Create)
-		api.GET("/transactions", transactionHandler.List)
-		api.GET("/transactions/:id", transactionHandler.Get)
-		api.PUT("/transactions/:id", transactionHandler.Update)
-		api.DELETE("/transactions/:id", transactionHandler.Delete)
-
-		// Stats
-		api.GET("/stats/monthly", transactionHandler.GetMonthlyStats)
-		api.GET("/stats/category", transactionHandler.GetCategoryStats)
-
-		// PDF Upload
-		api.POST("/upload/pdf", uploadHandler.UploadAndParse)
-		api.POST("/transactions/import", uploadHandler.Import)
-
-		// PDF Password Settings
+		// PDF Password Settings (user-specific, no view_as)
 		api.GET("/settings/pdf-passwords", pdfPasswordHandler.List)
 		api.POST("/settings/pdf-passwords", pdfPasswordHandler.Set)
 		api.PUT("/settings/pdf-passwords", pdfPasswordHandler.SetMultiple)
 		api.DELETE("/settings/pdf-passwords/:priority", pdfPasswordHandler.Delete)
+
+		// Gmail Integration (user-specific, no view_as)
+		if gmailHandler != nil {
+			api.GET("/gmail/auth", gmailHandler.GetAuthURL)
+			api.POST("/gmail/callback", gmailHandler.HandleCallback)
+			api.POST("/gmail/scan", gmailHandler.TriggerScan)
+			api.GET("/gmail/status", gmailHandler.GetStatus)
+			api.GET("/gmail/settings", gmailHandler.GetSettings)
+			api.PUT("/gmail/settings", gmailHandler.UpdateSettings)
+			api.DELETE("/gmail/disconnect", gmailHandler.Disconnect)
+		}
+	}
+
+	// Data routes with view_as support
+	data := r.Group("/api")
+	data.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
+	data.Use(middleware.ViewAsMiddleware(sharingRepo))
+	data.Use(middleware.ReadOnlyGuard())
+	{
+		// Categories
+		data.GET("/categories", categoryHandler.GetAll)
+		data.GET("/categories/type/:type", categoryHandler.GetByType)
+
+		// Transactions
+		data.POST("/transactions", transactionHandler.Create)
+		data.GET("/transactions", transactionHandler.List)
+		data.GET("/transactions/:id", transactionHandler.Get)
+		data.PUT("/transactions/:id", transactionHandler.Update)
+		data.DELETE("/transactions/:id", transactionHandler.Delete)
+
+		// Stats
+		data.GET("/stats/monthly", transactionHandler.GetMonthlyStats)
+		data.GET("/stats/category", transactionHandler.GetCategoryStats)
+		data.GET("/stats/trend", transactionHandler.GetTrendStats)
+
+		// PDF Upload
+		data.POST("/upload/pdf", uploadHandler.UploadAndParse)
+		data.POST("/transactions/import", uploadHandler.Import)
+
+		// Budget
+		data.POST("/budget", budgetHandler.Create)
+		data.GET("/budget", budgetHandler.List)
+		data.PUT("/budget/:id", budgetHandler.Update)
+		data.DELETE("/budget/:id", budgetHandler.Delete)
+		data.GET("/budget/compare", budgetHandler.Compare)
+
+		// Export
+		data.GET("/export/csv", exportHandler.ExportCSV)
+
+		// Invoice
+		data.POST("/invoice/sync", invoiceHandler.Sync)
+		data.GET("/invoice/list", invoiceHandler.List)
+		data.POST("/invoice/confirm-duplicate", invoiceHandler.ConfirmDuplicate)
+		data.DELETE("/invoice/:id", invoiceHandler.Delete)
+		data.PUT("/invoice/settings", invoiceHandler.UpdateSettings)
 	}
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
-	log.Printf("Server starting on %s", addr)
+	logger.WithFields(logger.Fields{
+		"port": cfg.Server.Port,
+		"mode": cfg.Server.Mode,
+	}).Info("Server starting")
+
 	if err := r.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logger.WithError(err).Fatal("Failed to start server")
 	}
 }

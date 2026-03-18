@@ -6,7 +6,7 @@ import {
   TransactionFilter,
   TransactionListResponse,
 } from '@/types/transaction'
-import { MonthlyStats, CategoryStats } from '@/types/api'
+import { MonthlyStats, CategoryStats, TrendStatsResponse } from '@/types/api'
 
 export const transactionsApi = {
   list: async (filter: TransactionFilter = {}) => {
@@ -47,5 +47,30 @@ export const transactionsApi = {
     if (type) params.type = type
     const response = await apiClient.get<CategoryStats[]>('/api/stats/category', params)
     return response.data
+  },
+
+  getTrendStats: async (months: number = 12) => {
+    const response = await apiClient.get<TrendStatsResponse>('/api/stats/trend', { months })
+    return response.data
+  },
+
+  exportCSV: async (startDate: string, endDate: string) => {
+    const token = localStorage.getItem('token')
+    const baseURL = import.meta.env.VITE_API_URL || ''
+    const response = await fetch(
+      `${baseURL}/api/export/csv?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    if (!response.ok) {
+      throw new Error('Failed to export CSV')
+    }
+    const blob = await response.blob()
+    const filename = response.headers.get('Content-Disposition')?.match(/filename=(.+)/)?.[1]
+      || `transactions_${startDate}_${endDate}.csv`
+    return { blob, filename }
   },
 }

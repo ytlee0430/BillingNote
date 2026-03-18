@@ -7,6 +7,7 @@ export interface Transaction {
   description: string
   transaction_date: string
   source: string
+  tags: string[]
   created_at: string
   updated_at: string
   category?: Category
@@ -28,6 +29,7 @@ export interface CreateTransactionRequest {
   description: string
   transaction_date: string
   source?: string
+  tags?: string[]
 }
 
 export interface UpdateTransactionRequest {
@@ -36,6 +38,7 @@ export interface UpdateTransactionRequest {
   type?: 'income' | 'expense'
   description?: string
   transaction_date?: string
+  tags?: string[]
 }
 
 export interface TransactionFilter {
@@ -43,6 +46,10 @@ export interface TransactionFilter {
   start_date?: string
   end_date?: string
   category_id?: number
+  q?: string
+  tags?: string
+  min_amount?: number
+  max_amount?: number
   page?: number
   page_size?: number
 }

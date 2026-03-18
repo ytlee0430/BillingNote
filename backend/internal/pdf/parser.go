@@ -5,13 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
 // Transaction represents a parsed transaction from PDF
@@ -120,47 +117,32 @@ func (r *ParserRegistry) ExtractText(pdfPath string, passwords []string) (string
 	return "", errors.New("all passwords failed or PDF is corrupted")
 }
 
-// extractTextFromPDF extracts text from a PDF file
+// extractTextFromPDF extracts text from a PDF file using pdftotext (poppler)
 func extractTextFromPDF(pdfPath string, password string) (string, error) {
-	// Create configuration with password if provided
-	conf := model.NewDefaultConfiguration()
+	args := []string{"-layout"}
 	if password != "" {
-		conf.UserPW = password
-		conf.OwnerPW = password
+		args = append(args, "-upw", password)
+	}
+	args = append(args, pdfPath, "-") // "-" means output to stdout
+
+	cmd := exec.Command("pdftotext", args...)
+	var stdout, stderr strings.Builder
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	text := stdout.String()
+
+	// pdftotext may return non-zero exit code with warnings but still produce valid text
+	if strings.TrimSpace(text) != "" {
+		return text, nil
 	}
 
-	// Create a temporary directory for extracted content
-	tmpDir, err := os.MkdirTemp("", "pdf-extract-")
 	if err != nil {
-		return "", fmt.Errorf("failed to create temp dir: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Extract content to temp directory
-	// Using ExtractContentFile which writes to files
-	if err := api.ExtractContentFile(pdfPath, tmpDir, nil, conf); err != nil {
-		return "", fmt.Errorf("failed to extract text: %w", err)
+		return "", fmt.Errorf("pdftotext failed: %w (stderr: %s)", err, stderr.String())
 	}
 
-	// Read all extracted text files
-	var textContent strings.Builder
-	files, err := os.ReadDir(tmpDir)
-	if err != nil {
-		return "", fmt.Errorf("failed to read temp dir: %w", err)
-	}
-
-	for _, file := range files {
-		if !file.IsDir() {
-			content, err := os.ReadFile(filepath.Join(tmpDir, file.Name()))
-			if err != nil {
-				continue
-			}
-			textContent.Write(content)
-			textContent.WriteString("\n")
-		}
-	}
-
-	return textContent.String(), nil
+	return "", errors.New("no text extracted from PDF")
 }
 
 // Parse parses a PDF file and returns transactions

@@ -75,6 +75,14 @@ func (m *MockTransactionService) GetCategoryStats(userID uint, startDate, endDat
 	return args.Get(0).([]map[string]interface{}), args.Error(1)
 }
 
+func (m *MockTransactionService) GetTrendStats(userID uint, months int) ([]repository.TrendDataPoint, error) {
+	args := m.Called(userID, months)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.TrendDataPoint), args.Error(1)
+}
+
 func setupTransactionTest() (*gin.Engine, *MockTransactionService) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -100,7 +108,7 @@ func createTestContext(userID uint) *gin.Context {
 }
 
 func TestTransactionHandler_Create_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	categoryID := uint(1)
 	createReq := &services.CreateTransactionRequest{
@@ -168,7 +176,7 @@ func TestTransactionHandler_Create_Failure_Unauthorized(t *testing.T) {
 }
 
 func TestTransactionHandler_Create_Failure_InvalidJSON(t *testing.T) {
-	router, _ := setupTransactionTest()
+	_, _ = setupTransactionTest()
 
 	req, _ := http.NewRequest(http.MethodPost, "/transactions", bytes.NewBuffer([]byte("invalid")))
 	req.Header.Set("Content-Type", "application/json")
@@ -185,7 +193,7 @@ func TestTransactionHandler_Create_Failure_InvalidJSON(t *testing.T) {
 }
 
 func TestTransactionHandler_Get_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	categoryID := uint(1)
 	mockTransaction := &models.Transaction{
@@ -222,7 +230,7 @@ func TestTransactionHandler_Get_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_Get_Failure_NotFound(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockService.On("GetTransaction", uint(999), uint(1)).
 		Return(nil, errors.New("transaction not found"))
@@ -244,7 +252,7 @@ func TestTransactionHandler_Get_Failure_NotFound(t *testing.T) {
 }
 
 func TestTransactionHandler_Get_Failure_InvalidID(t *testing.T) {
-	router, _ := setupTransactionTest()
+	_, _ = setupTransactionTest()
 
 	req, _ := http.NewRequest(http.MethodGet, "/transactions/invalid", nil)
 
@@ -261,7 +269,7 @@ func TestTransactionHandler_Get_Failure_InvalidID(t *testing.T) {
 }
 
 func TestTransactionHandler_List_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockTransactions := []models.Transaction{
 		{ID: 1, Amount: 100.50, Type: "expense"},
@@ -292,7 +300,7 @@ func TestTransactionHandler_List_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_List_WithFilters(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockTransactions := []models.Transaction{
 		{ID: 1, Amount: 100.50, Type: "expense"},
@@ -317,7 +325,7 @@ func TestTransactionHandler_List_WithFilters(t *testing.T) {
 }
 
 func TestTransactionHandler_Update_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	updateReq := &services.UpdateTransactionRequest{
 		Amount:      150.00,
@@ -362,7 +370,7 @@ func TestTransactionHandler_Update_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_Update_Failure_NotFound(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	updateReq := &services.UpdateTransactionRequest{
 		Amount: 150.00,
@@ -390,7 +398,7 @@ func TestTransactionHandler_Update_Failure_NotFound(t *testing.T) {
 }
 
 func TestTransactionHandler_Delete_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockService.On("DeleteTransaction", uint(1), uint(1)).Return(nil)
 
@@ -416,7 +424,7 @@ func TestTransactionHandler_Delete_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_Delete_Failure(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockService.On("DeleteTransaction", uint(999), uint(1)).
 		Return(errors.New("transaction not found"))
@@ -438,7 +446,7 @@ func TestTransactionHandler_Delete_Failure(t *testing.T) {
 }
 
 func TestTransactionHandler_GetMonthlyStats_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockStats := map[string]float64{
 		"total_income":  1000.00,
@@ -470,7 +478,7 @@ func TestTransactionHandler_GetMonthlyStats_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_GetMonthlyStats_DefaultValues(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	now := time.Now()
 	mockStats := map[string]float64{
@@ -496,7 +504,7 @@ func TestTransactionHandler_GetMonthlyStats_DefaultValues(t *testing.T) {
 }
 
 func TestTransactionHandler_GetCategoryStats_Success(t *testing.T) {
-	router, mockService := setupTransactionTest()
+	_, mockService := setupTransactionTest()
 
 	mockStats := []map[string]interface{}{
 		{"category": "Food", "total": 300.00, "count": 5},
@@ -530,7 +538,7 @@ func TestTransactionHandler_GetCategoryStats_Success(t *testing.T) {
 }
 
 func TestTransactionHandler_GetCategoryStats_Failure_InvalidDate(t *testing.T) {
-	router, _ := setupTransactionTest()
+	_, _ = setupTransactionTest()
 
 	req, _ := http.NewRequest(http.MethodGet, "/transactions/stats/category?start_date=invalid&end_date=2024-12-31&type=expense", nil)
 

@@ -15,6 +15,19 @@ type Config struct {
 	JWT        JWTConfig
 	Upload     UploadConfig
 	Encryption EncryptionConfig
+	Google     GoogleConfig
+	EInvoice   EInvoiceConfig
+}
+
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+}
+
+type EInvoiceConfig struct {
+	AppID  string
+	APIURL string
 }
 
 type EncryptionConfig struct {
@@ -74,6 +87,15 @@ func Load() (*Config, error) {
 		},
 		Encryption: EncryptionConfig{
 			Key: getEnv("ENCRYPTION_KEY", "change-this-encryption-key-32b"),
+		},
+		Google: GoogleConfig{
+			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURI:  getEnv("GOOGLE_REDIRECT_URI", "http://localhost:5173/settings"),
+		},
+		EInvoice: EInvoiceConfig{
+			AppID:  getEnv("EINVOICE_APP_ID", ""),
+			APIURL: getEnv("EINVOICE_API_URL", "https://api.einvoice.nat.gov.tw/PB2CAPIVAN/invapp/InvApp"),
 		},
 	}
 

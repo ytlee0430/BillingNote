@@ -108,6 +108,7 @@ func (s *UploadService) ParsePDF(userID uint, filePath string) (*UploadResult, e
 	// Parse the PDF
 	transactions, bankName, err := s.registry.Parse(filePath, passwords)
 	if err != nil {
+		fmt.Printf("Error parsing PDF %s: %v\n", filename, err)
 		return &UploadResult{
 			Filename: filename,
 			Error:    err.Error(),

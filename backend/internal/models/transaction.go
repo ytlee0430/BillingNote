@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Transaction struct {
@@ -12,8 +14,9 @@ type Transaction struct {
 	Type            string    `gorm:"not null;index" json:"type"` // "income" or "expense"
 	Description     string    `json:"description"`
 	TransactionDate time.Time `gorm:"not null;index" json:"transaction_date"`
-	Source          string    `gorm:"default:manual" json:"source"` // "manual", "pdf", "gmail", "invoice"
-	CreatedAt       time.Time `json:"created_at"`
+	Source          string         `gorm:"default:manual" json:"source"` // "manual", "pdf", "gmail", "invoice"
+	Tags            pq.StringArray `gorm:"type:text[];default:'{}'" json:"tags"`
+	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 
 	// Associations

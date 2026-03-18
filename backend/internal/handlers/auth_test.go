@@ -213,7 +213,7 @@ func TestAuthHandler_Login_Failure_InvalidJSON(t *testing.T) {
 }
 
 func TestAuthHandler_Me_Success(t *testing.T) {
-	router, _ := setupAuthTest()
+	_, _ = setupAuthTest()
 
 	req, _ := http.NewRequest(http.MethodGet, "/auth/me", nil)
 
@@ -238,7 +238,7 @@ func TestAuthHandler_Me_Success(t *testing.T) {
 }
 
 func TestAuthHandler_Me_Failure_Unauthenticated(t *testing.T) {
-	router, _ := setupAuthTest()
+	_, _ = setupAuthTest()
 
 	req, _ := http.NewRequest(http.MethodGet, "/auth/me", nil)
 
