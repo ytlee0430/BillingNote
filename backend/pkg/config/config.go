@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -67,7 +68,7 @@ func Load() (*Config, error) {
 		Server: ServerConfig{
 			Port:         getEnv("PORT", "8080"),
 			Mode:         getEnv("GIN_MODE", "debug"),
-			AllowOrigins: []string{getEnv("ALLOWED_ORIGINS", "http://localhost:5173")},
+			AllowOrigins: parseCSV(getEnv("ALLOWED_ORIGINS", "http://localhost:5173")),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -128,4 +129,15 @@ func parseInt64(s string) int64 {
 		return 0
 	}
 	return i
+}
+
+func parseCSV(s string) []string {
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
