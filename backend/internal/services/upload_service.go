@@ -172,12 +172,20 @@ func (s *UploadService) ImportTransactions(userID uint, transactions []ParsedTra
 			continue
 		}
 
+		// Negative amounts are refunds/discounts — store as positive income
+		txType := "expense"
+		txAmount := t.Amount
+		if t.Amount < 0 {
+			txType = "income"
+			txAmount = -t.Amount
+		}
+
 		transaction := models.Transaction{
 			UserID:          userID,
 			TransactionDate: t.Date,
 			Description:     t.Description,
-			Amount:          t.Amount,
-			Type:            "expense",
+			Amount:          txAmount,
+			Type:            txType,
 			Source:          "pdf_import",
 		}
 
