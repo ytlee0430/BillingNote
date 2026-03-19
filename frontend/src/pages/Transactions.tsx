@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { TransactionList } from '@/components/transaction/TransactionList'
 import { TransactionModal } from '@/components/transaction/TransactionModal'
 import { ExportModal } from '@/components/export/ExportModal'
 import { Button } from '@/components/common/Button'
 import { useTransactions } from '@/hooks/useTransactions'
+import { categoriesApi } from '@/api/categories'
 import { TransactionFilter, Transaction } from '@/types/transaction'
 
 export const Transactions = () => {
@@ -14,6 +16,11 @@ export const Transactions = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.getAll(),
+  })
 
   const {
     transactions,
@@ -77,7 +84,7 @@ export const Transactions = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Type
@@ -94,6 +101,28 @@ export const Transactions = () => {
               <option value="">All</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              value={filter.category_id ?? ''}
+              onChange={(e) =>
+                handleFilterChange({
+                  category_id: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
             </select>
           </div>
 
