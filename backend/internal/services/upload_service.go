@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -166,12 +167,25 @@ func (s *UploadService) ImportTransactions(userID uint, transactions []ParsedTra
 			continue
 		}
 
+		// Skip card payment / bill-pay transactions (not actual spending)
+		if shouldSkipTransaction(t.Description) {
+			continue
+		}
+
+		// Negative amounts are refunds/discounts — store as positive income
+		txType := "expense"
+		txAmount := t.Amount
+		if t.Amount < 0 {
+			txType = "income"
+			txAmount = -t.Amount
+		}
+
 		transaction := models.Transaction{
 			UserID:          userID,
 			TransactionDate: t.Date,
 			Description:     t.Description,
-			Amount:          t.Amount,
-			Type:            "expense",
+			Amount:          txAmount,
+			Type:            txType,
 			Source:          "pdf_import",
 		}
 
@@ -195,6 +209,24 @@ func (s *UploadService) ImportTransactions(userID uint, transactions []ParsedTra
 	}
 
 	return imported, nil
+}
+
+// shouldSkipTransaction returns true for non-spending entries that should not
+// be imported as expenses (e.g., card bill payments, balance transfers).
+func shouldSkipTransaction(description string) bool {
+	skipPatterns := []string{
+		"自動轉帳扣繳",  // auto-debit card payment
+		"繳信用卡款",    // pay credit card bill
+		"帳戶自動扣繳",  // auto-debit from account
+		"溢繳款",       // overpayment refund entry
+	}
+	descLower := strings.ToLower(description)
+	for _, p := range skipPatterns {
+		if strings.Contains(descLower, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // ParseMultiplePDFs parses multiple PDF files
